@@ -462,7 +462,7 @@ textarea:focus {
     width: 80px;
     /* height: 80px; */
     display: flex;
-    align-items: flex-end;
+    /* align-items: flex-end; */
     justify-content: flex-end;
 }
 
@@ -880,7 +880,7 @@ footer {
     width: 200px;
     height: 200px;
     display: flex;
-    align-items: center;
+    /* align-items: center; */
     justify-content: center;
     flex-shrink: 0;
 }
@@ -1097,9 +1097,10 @@ footer {
     border: 1px solid var(--gray-300);
     border-radius: 6px;
     display: flex;
-    align-items: center;
+    /* align-items: center; */
     justify-content: center;
     margin-bottom: 20px;
+    padding: 10px;
 }
 
 .thumb-gallery {

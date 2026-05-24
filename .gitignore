@@ -13,4 +13,12 @@ Backend/obj
 
 Backend/Migrations
 
+
+.vs
+
 Backend/ecommerce.db
+
+
+Backend/ecommerce.db-shm
+
+Backend/ecommerce.db-wal

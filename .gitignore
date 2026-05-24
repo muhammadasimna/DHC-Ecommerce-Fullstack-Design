@@ -1,3 +1,16 @@
 Frontend/node_modules
 
+.github
 
+Frontend/dist
+
+
+Backend/.vs
+
+Backend/bin
+
+Backend/obj
+
+Backend/Migrations
+
+Backend/ecommerce.db

@@ -1,7 +1,78 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
+  const { user, token, backendUrl } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
+
+  const dealsItems = [
+    { img: './public/assets/Image/tech/8.png', name: 'Smart watches', tag: '-25%' },
+    { img: './public/assets/Image/tech/image 34.png', name: 'Laptops', tag: '-15%' },
+    { img: './public/assets/Image/tech/6.png', name: 'GoPro cameras', tag: '-40%' },
+    { img: './public/assets/Image/tech/image 29.png', name: 'Headphones', tag: '-25%' },
+    { img: './public/assets/Image/tech/6.png', name: 'Canon cameras', tag: '-25%' },
+  ];
+  const homeOutdoorItems = [
+    { name: 'Soft chairs', price: 'From USD 19', img: './public/assets/Image/interior/1.png' },
+    { name: 'Sofa & chair', price: 'From USD 19', img: './public/assets/Image/interior/3.png' },
+    { name: 'Kitchen dishes', price: 'From USD 19', img: './public/assets/Image/interior/6.png' },
+    { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
+    { name: 'Kitchen mixer', price: 'From USD 100', img: './public/assets/Image/interior/image 89.png' },
+    { name: 'Blenders', price: 'From USD 39', img: './public/assets/Image/interior/image 93.png' },
+    { name: 'Home appliance', price: 'From USD 19', img: './public/assets/Image/interior/7.png' },
+    { name: 'Coffee maker', price: 'From USD 10', img: './public/assets/Image/interior/9.png' },
+  ];
+  const consumerItems = [
+    { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
+    { name: 'Cameras', price: 'From USD 89', img: './public/assets/Image/tech/6.png' },
+    { name: 'Headphones', price: 'From USD 10', img: './public/assets/Layout/alibaba/Image/tech/image 86.png' },
+    { name: 'Smart watches', price: 'From USD 90', img: './public/assets/Layout/alibaba/Image/tech/image 85.png' },
+    { name: 'Gaming set', price: 'From USD 35', img: './public/assets/Image/tech/image 29.png' },
+    { name: 'Laptops & PC', price: 'From USD 340', img: './public/assets/Image/tech/image 34.png' },
+    { name: 'Smartphones', price: 'From USD 19', img: './public/assets/Image/tech/image 32.png' },
+    { name: 'Electric kettle', price: 'From USD 240', img: './public/assets/Image/tech/image 33.png' },
+  ];
+  const defaultRecommended = [
+    { id: 1, image: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png', price: 10.3, title: 'T-shirts with multiple colors, for men' },
+    { id: 2, image: './public/assets/Layout/alibaba/Image/cloth/2 1.png', price: 10.3, title: 'Jeans shorts for men blue color' },
+    { id: 3, image: './public/assets/Layout/alibaba/Image/cloth/image 30.png', price: 12.5, title: 'Brown winter coat medium size' },
+    { id: 4, image: './public/assets/Layout/alibaba/Image/cloth/image 24.png', price: 34, title: 'Jeans bag for travel for men' },
+    { id: 5, image: './public/assets/Layout/alibaba/Image/cloth/image 26.png', price: 99, title: 'Leather wallet' }
+  ];
+  const [recommendedItems, setRecommendedItems] = useState(defaultRecommended);
+  const filteredDeals = query ? dealsItems.filter((x) => x.name.toLowerCase().includes(query)) : dealsItems;
+  const filteredHomeOutdoor = query ? homeOutdoorItems.filter((x) => x.name.toLowerCase().includes(query)) : homeOutdoorItems;
+  const filteredConsumer = query ? consumerItems.filter((x) => x.name.toLowerCase().includes(query)) : consumerItems;
+  const filteredRecommended = query
+    ? recommendedItems.filter((x) => String(x.title || '').toLowerCase().includes(query))
+    : recommendedItems;
+
+  useEffect(() => {
+    const fetchRecommended = async () => {
+      if (!token) {
+        setRecommendedItems(defaultRecommended);
+        return;
+      }
+
+      try {
+        const res = await fetch(`${backendUrl}/products/recommended`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (Array.isArray(data) && data.length > 0) {
+          setRecommendedItems(data);
+        }
+      } catch {
+        setRecommendedItems(defaultRecommended);
+      }
+    };
+
+    fetchRecommended();
+  }, [backendUrl, token]);
   return (
     <main className="container">
       {/* Hero Section */}
@@ -31,10 +102,20 @@ export default function Home() {
             <div className="user-card">
               <div className="user-info">
                 <div className="user-avatar" style={{ backgroundImage: "url('./public/assets/Layout1/Image/flags/icon.png')", backgroundSize: 'cover' }}></div>
-                <span>Hi, user <br /> let's get started</span>
+                {user ? (
+                  <span>Hi, {user.username} <br /> Welcome back!</span>
+                ) : (
+                  <span>Hi, user <br /> let's get started</span>
+                )}
               </div>
-              <button className="btn btn-primary" style={{ width: '100%', marginBottom: '8px', fontSize: '14px' }}>Join now</button>
-              <button className="btn btn-white" style={{ width: '100%', fontSize: '14px', color: 'var(--primary-color)' }}>Log in</button>
+              {user ? (
+                <Link to="/cart" className="btn btn-primary" style={{ width: '100%', marginBottom: '8px', fontSize: '14px', display: 'block' }}>Go to Cart</Link>
+              ) : (
+                <>
+                  <Link to="/signup" className="btn btn-primary" style={{ width: '100%', marginBottom: '8px', fontSize: '14px', display: 'block' }}>Join now</Link>
+                  <Link to="/login" className="btn btn-white" style={{ width: '100%', fontSize: '14px', color: 'var(--primary-color)', display: 'block' }}>Log in</Link>
+                </>
+              )}
             </div>
             <div className="sale-card">
               <p>Get US $10 off with a new supplier</p>
@@ -62,13 +143,7 @@ export default function Home() {
             </div>
           </div>
           <div className="deals-products">
-            {[
-              { img: './public/assets/Image/tech/8.png', name: 'Smart watches', tag: '-25%' },
-              { img: './public/assets/Image/tech/image 34.png', name: 'Laptops', tag: '-15%' },
-              { img: './public/assets/Image/tech/6.png', name: 'GoPro cameras', tag: '-40%' },
-              { img: './public/assets/Image/tech/image 29.png', name: 'Headphones', tag: '-25%' },
-              { img: './public/assets/Image/tech/6.png', name: 'Canon cameras', tag: '-25%' },
-            ].map((deal, idx) => (
+            {filteredDeals.map((deal, idx) => (
               <div className="deal-item" key={idx}>
                 <div className="deal-img"><img src={deal.img} alt={deal.name} /></div>
                 <p style={{ fontSize: '14px', marginBottom: '10px' }}>{deal.name}</p>
@@ -87,16 +162,7 @@ export default function Home() {
             <button className="btn btn-white">Source now</button>
           </div>
           <div className="category-grid">
-            {[
-              { name: 'Soft chairs', price: 'From USD 19', img: './public/assets/Image/interior/1.png' },
-              { name: 'Sofa & chair', price: 'From USD 19', img: './public/assets/Image/interior/3.png' },
-              { name: 'Kitchen dishes', price: 'From USD 19', img: './public/assets/Image/interior/6.png' },
-              { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
-              { name: 'Kitchen mixer', price: 'From USD 100', img: './public/assets/Image/interior/image 89.png' },
-              { name: 'Blenders', price: 'From USD 39', img: './public/assets/Image/interior/image 93.png' },
-              { name: 'Home appliance', price: 'From USD 19', img: './public/assets/Image/interior/7.png' },
-              { name: 'Coffee maker', price: 'From USD 10', img: './public/assets/Image/interior/9.png' },
-            ].map((cat, idx) => (
+            {filteredHomeOutdoor.map((cat, idx) => (
               <div className="category-item" key={idx}>
                 <div className="category-item-info"><h4>{cat.name}</h4><p>{cat.price}</p></div>
                 <div className="category-item-img"><img src={cat.img} alt="" /></div>
@@ -114,16 +180,7 @@ export default function Home() {
             <button className="btn btn-white">Source now</button>
           </div>
           <div className="category-grid">
-            {[
-              { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
-              { name: 'Cameras', price: 'From USD 89', img: './public/assets/Image/tech/6.png' },
-              { name: 'Headphones', price: 'From USD 10', img: './public/assets/Layout/alibaba/Image/tech/image 86.png' },
-              { name: 'Smart watches', price: 'From USD 90', img: './public/assets/Layout/alibaba/Image/tech/image 85.png' },
-              { name: 'Gaming set', price: 'From USD 35', img: './public/assets/Image/tech/image 29.png' },
-              { name: 'Laptops & PC', price: 'From USD 340', img: './public/assets/Image/tech/image 34.png' },
-              { name: 'Smartphones', price: 'From USD 19', img: './public/assets/Image/tech/image 32.png' },
-              { name: 'Electric kettle', price: 'From USD 240', img: './public/assets/Image/tech/image 33.png' },
-            ].map((cat, idx) => (
+            {filteredConsumer.map((cat, idx) => (
               <div className="category-item" key={idx}>
                 <div className="category-item-info"><h4>{cat.name}</h4><p>{cat.price}</p></div>
                 <div className="category-item-img"><img src={cat.img} alt="" /></div>
@@ -159,21 +216,18 @@ export default function Home() {
       <section className="section-recommended">
         <h2>Recommended items</h2>
         <div className="recommended-grid">
-          {[
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png', price: '$10.30', title: 'T-shirts with multiple colors, for men' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/2 1.png', price: '$10.30', title: 'Jeans shorts for men blue color' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 30.png', price: '$12.50', title: 'Brown winter coat medium size' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 24.png', price: '$34.00', title: 'Jeans bag for travel for men' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 26.png', price: '$99.00', title: 'Leather wallet' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap (2).png', price: '$9.99', title: 'Canon camera black, 100x zoom' },
-            { img: './public/assets/Layout/alibaba/Image/tech/image 86.png', price: '$8.99', title: 'Headset for gaming with mic' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 26.png', price: '$10.30', title: 'Smart watch silver color modern' },
-            { img: './public/assets/Layout/alibaba/Image/interior/image 90.png', price: '$10.30', title: 'Blue wallet for men leather material' },
-            { img: './public/assets/Layout/alibaba/Image/tech/image 85.png', price: '$80.95', title: 'Jeans bag for travel for men' },
-          ].map((item, idx) => (
-            <div className="product-card" key={idx}>
-              <div className="product-card-img"><img src={item.img} alt="" /></div>
-              <div className="product-card-info"><p className="price">{item.price}</p><p className="title">{item.title}</p></div>
+          {filteredRecommended.map((item, idx) => (
+            <div
+              className="product-card"
+              key={item.id || idx}
+              style={{ cursor: 'pointer' }}
+              onClick={() => {
+                if (!item.id) return;
+                navigate(`/product?id=${item.id}`);
+              }}
+            >
+              <div className="product-card-img"><img src={item.image || item.img} alt="" /></div>
+              <div className="product-card-info"><p className="price">${Number(item.price).toFixed(2)}</p><p className="title">{item.title}</p></div>
             </div>
           ))}
         </div>

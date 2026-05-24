@@ -1732,4 +1732,125 @@
         gap: 15px;
         align-items: center;
     }
+
+    /* My Products page mobile */
+    .my-products-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .my-products-header .btn {
+        width: 100%;
+    }
+
+    .my-products-toolbar {
+        display: flex !important;
+        padding: 10px 12px !important;
+    }
+
+    .my-products-toolbar .item-count span {
+        font-size: 14px;
+    }
+
+    .my-products-grid-view {
+        display: grid !important;
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+    }
+
+    .my-products-grid-view .my-product-card {
+        padding: 12px !important;
+        border: 1px solid var(--gray-300);
+        border-radius: 6px;
+        background: var(--white);
+    }
+
+    .my-products-grid-view .my-product-title {
+        font-size: 14px;
+    }
+
+    .my-products-grid-view .my-products-item-actions {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .my-products-grid-view .my-products-item-actions .btn {
+        width: 100%;
+        padding: 8px 10px;
+    }
+
+    .my-products-list-view .my-product-card {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: center !important;
+    }
+
+    .my-products-list-view .my-product-title {
+        font-size: 14px !important;
+    }
+
+    .my-products-list-view .my-products-item-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-left: 8px;
+    }
+
+    .my-products-list-view .my-products-item-actions .btn {
+        padding: 8px 10px;
+    }
+
+    .my-product-image {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: contain !important;
+        object-position: center !important;
+    }
+
+    .orders-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    body.orders-page .container {
+        padding: 0 10px !important;
+    }
+
+    body.orders-page h2 {
+        font-size: 24px !important;
+        margin-top: 14px !important;
+        margin-bottom: 12px !important;
+    }
+
+    body.orders-page .listing-top-bar {
+        display: flex !important;
+        padding: 8px 10px !important;
+        margin-bottom: 10px !important;
+    }
+
+    body.orders-page .view-options {
+        gap: 8px !important;
+    }
+
+    body.orders-page .orders-list,
+    body.orders-page .orders-grid {
+        gap: 10px !important;
+    }
+
+    body.orders-page .orders-list section,
+    body.orders-page .orders-grid section {
+        padding: 12px !important;
+        border-radius: 8px !important;
+    }
+
+    body.orders-page .orders-list section a,
+    body.orders-page .orders-grid section a {
+        padding: 8px !important;
+    }
+
+    body.orders-page .orders-list section img,
+    body.orders-page .orders-grid section img {
+        width: 52px !important;
+        height: 52px !important;
+    }
 }

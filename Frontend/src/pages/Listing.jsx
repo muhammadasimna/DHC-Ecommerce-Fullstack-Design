@@ -1,22 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 export default function Listing() {
   const [viewMode, setViewMode] = useState('grid');
+  const { backendUrl } = useAuth();
+  const { addToCart, saveProductDirectly, savedItems = [], removeFromCart } = useCart();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [addedMessage, setAddedMessage] = useState('');
 
-  useEffect(() => {
-    document.body.classList.add('listing-page');
-    return () => {
-      document.body.classList.remove('listing-page');
-    };
-  }, []);
-
-  const products = [
+  const defaultProducts = [
     {
       id: 1,
       image: './public/assets/Image/tech/image 33.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
+      title: 'Regular Fit Resort Shirt - Cool Tech Style',
+      price: 57.70,
       oldPrice: null,
       rating: 7.5,
       stars: 4,
@@ -26,92 +26,120 @@ export default function Listing() {
     {
       id: 2,
       image: './public/assets/Image/tech/image 23.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
-      stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+      title: 'Water boiler black for kitchen, 1200 Watt',
+      price: 78.99,
+      oldPrice: 90.00,
+      rating: 8.5,
+      stars: 4.5,
+      orders: 340,
+      desc: 'High quality water boiler with fast heating speed, sleek black design, safety auto-shutdown capability.'
     },
     {
       id: 3,
       image: './public/assets/Image/tech/image 32.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
-      stars: 4,
+      title: 'GoPro HERO6 4K Action Camera - Black',
+      price: 99.50,
+      oldPrice: 120.00,
+      rating: 9.3,
+      stars: 4.8,
       orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+      desc: 'Capture stunning 4K video and 12MP photos in Single, Burst, and Time Lapse modes.'
     },
     {
       id: 4,
-      image: './public/assets/Image/tech/image 32.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
+      image: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png',
+      title: 'T-shirts with multiple colors, for men',
+      price: 10.30,
+      oldPrice: 15.00,
+      rating: 7.2,
       stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+      orders: 98,
+      desc: 'Premium multi-color cotton T-shirts. Ideal for everyday use, highly breathable fabric.'
     },
     {
       id: 5,
-      image: './public/assets/Image/tech/6.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
+      image: './public/assets/Layout/alibaba/Image/cloth/image 26.png',
+      title: 'Solid Backpack blue jeans large size',
+      price: 78.99,
       oldPrice: null,
-      rating: 7.5,
+      rating: 7.9,
       stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+      orders: 210,
+      desc: 'Durable canvas backpack styled in classic denim look. Large volume fits up to 15.6 inch laptops.'
     },
     {
       id: 6,
-      image: './public/assets/Image/tech/image 23.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
-      stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-    },
-    {
-      id: 7,
-      image: './public/assets/Image/tech/image 34.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
-      stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-    },
-    {
-      id: 8,
       image: './public/assets/Image/tech/8.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
+      title: 'Smart watches silver color modern',
+      price: 19.00,
+      oldPrice: 25.00,
+      rating: 8.0,
       stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
-    },
-    {
-      id: 9,
-      image: './public/assets/Image/tech/image 33.png',
-      title: 'Regular Fit Resort Shirt',
-      price: '$57.70',
-      oldPrice: null,
-      rating: 7.5,
-      stars: 4,
-      orders: 154,
-      desc: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+      orders: 520,
+      desc: 'Modern smart watch featuring real-time health monitoring, step counter, bluetooth calls.'
     }
   ];
+
+  const [products, setProducts] = useState(defaultProducts);
+
+  useEffect(() => {
+    document.body.classList.add('listing-page');
+
+    const fetchProducts = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/products`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.length > 0) {
+            setProducts(data);
+          }
+        }
+      } catch (err) {
+        console.warn('Backend API not responding, using static backup products.', err);
+      }
+    };
+
+    fetchProducts();
+
+    return () => {
+      document.body.classList.remove('listing-page');
+    };
+  }, [backendUrl]);
+
+
+  const handleAddToCart = async (e, productId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setAddedMessage('');
+    try {
+      await addToCart(productId, 1);
+      setAddedMessage('Item added to cart!');
+      setTimeout(() => setAddedMessage(''), 3000);
+    } catch (err) {
+      setAddedMessage(err.message || 'Please log in first!');
+      setTimeout(() => setAddedMessage(''), 3000);
+    }
+  };
+
+  const handleSaveProduct = async (e, productId) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setAddedMessage('');
+    const savedItem = savedItems.find(item => item.productId === productId);
+    try {
+      if (savedItem) {
+        await removeFromCart(savedItem.id);
+        setAddedMessage('Removed from saved items!');
+      } else {
+        await saveProductDirectly(productId);
+        setAddedMessage('Item saved for later!');
+      }
+      setTimeout(() => setAddedMessage(''), 3000);
+    } catch (err) {
+      setAddedMessage(err.message || 'Please log in first!');
+      setTimeout(() => setAddedMessage(''), 3000);
+    }
+  };
 
   const renderStars = (stars) => {
     const fullStars = Math.floor(stars);
@@ -126,6 +154,22 @@ export default function Listing() {
       </div>
     );
   };
+
+  const formatPrice = (price) => {
+    if (typeof price === 'number') {
+      return `$${price.toFixed(2)}`;
+    }
+    return price;
+  };
+
+  const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
+  const displayedProducts = query
+    ? products.filter((product) =>
+        [product.title, product.category, product.description || product.desc]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(query))
+      )
+    : products;
 
   return (
     <div className="container listing-page-container">
@@ -153,36 +197,25 @@ export default function Listing() {
           <div className="pill">Jackets</div>
           <div className="pill">Tech</div>
         </div>
-
-        {/* <div className="mobile-sort-filter-bar">
-          <button className="mobile-bar-btn">
-            Sort: Newest <i className="fa-solid fa-arrow-down-wide-short" style={{ marginLeft: '5px' }}></i>
-          </button>
-          <button className="mobile-bar-btn">
-            Filter (3) <i className="fa-solid fa-filter" style={{ marginLeft: '5px' }}></i>
-          </button>
-          <div className="mobile-view-toggle">
-            <button
-              className={`toggle-btn ${viewMode === 'grid' ? 'active' : ''}`}
-              onClick={() => setViewMode('grid')}
-            >
-              <i className="fa-solid fa-table-cells"></i>
-            </button>
-            <button
-              className={`toggle-btn ${viewMode === 'list' ? 'active' : ''}`}
-              onClick={() => setViewMode('list')}
-            >
-              <i className="fa-solid fa-list"></i>
-            </button>
-          </div>
-        </div> */}
-
-        {/* <div className="mobile-active-tags">
-          <div className="active-tag-pill">Huawei <i className="fa-solid fa-xmark"></i></div>
-          <div className="active-tag-pill">Apple <i className="fa-solid fa-xmark"></i></div>
-          <div className="active-tag-pill">64GB <i className="fa-solid fa-xmark"></i></div>
-        </div> */}
       </div>
+
+      {addedMessage && (
+        <div style={{
+          position: 'fixed',
+          bottom: '20px',
+          right: '20px',
+          backgroundColor: (addedMessage.includes('added') || addedMessage.includes('saved')) ? '#E8F5E9' : '#FFF2F2',
+          border: '1px solid ' + ((addedMessage.includes('added') || addedMessage.includes('saved')) ? 'var(--green)' : 'var(--red)'),
+          color: (addedMessage.includes('added') || addedMessage.includes('saved')) ? 'var(--green)' : 'var(--red)',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+          zIndex: 1000,
+          fontWeight: '500'
+        }}>
+          {addedMessage}
+        </div>
+      )}
 
       <div className="mobile-only">
         <div className="mobile-sort-filter-bar">
@@ -217,7 +250,7 @@ export default function Listing() {
       </div>
 
       <div className="breadcrumbs desktop-only">
-        <a href="/">Home</a>
+        <Link to="/">Home</Link>
         <i className="fa-solid fa-chevron-right" style={{ fontSize: '10px', alignSelf: 'center', margin: '0 5px' }}></i>
         <a href="#">Clothings</a>
         <i className="fa-solid fa-chevron-right" style={{ fontSize: '10px', alignSelf: 'center', margin: '0 5px' }}></i>
@@ -271,87 +304,12 @@ export default function Listing() {
               <a href="#" className="see-all">See all</a>
             </div>
           </div>
-
-          <div className="filter-group">
-            <div className="filter-header">
-              <h4>Price range</h4>
-              <i className={`fa-solid fa-chevron-${viewMode === 'list' ? 'up' : 'down'}`}></i>
-            </div>
-            {viewMode === 'list' && (
-              <div className="filter-content">
-                <input type="range" style={{ width: '100%', marginBottom: '10px' }} />
-                <div className="price-inputs">
-                  <div><label style={{ fontSize: '12px' }}>Min</label><input type="number" placeholder="0" /></div>
-                  <div><label style={{ fontSize: '12px' }}>Max</label><input type="number" placeholder="999999" /></div>
-                </div>
-                <button className="btn btn-white" style={{ width: '100%', marginTop: '15px', color: 'var(--primary-color)' }}>Apply</button>
-              </div>
-            )}
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-header">
-              <h4>Condition</h4>
-              <i className={`fa-solid fa-chevron-${viewMode === 'list' ? 'up' : 'down'}`}></i>
-            </div>
-            {viewMode === 'list' && (
-              <div className="filter-content">
-                <label className="checkbox-group"><input type="radio" name="condition" defaultChecked /> <span>Any</span></label>
-                <label className="checkbox-group"><input type="radio" name="condition" /> <span>Refurbished</span></label>
-                <label className="checkbox-group"><input type="radio" name="condition" /> <span>Brand new</span></label>
-                <label className="checkbox-group"><input type="radio" name="condition" /> <span>Old items</span></label>
-              </div>
-            )}
-          </div>
-
-          <div className="filter-group">
-            <div className="filter-header">
-              <h4>Ratings</h4>
-              <i className={`fa-solid fa-chevron-${viewMode === 'list' ? 'up' : 'down'}`}></i>
-            </div>
-            {viewMode === 'list' && (
-              <div className="filter-content">
-                <label className="checkbox-group">
-                  <input type="checkbox" defaultChecked />
-                  <div className="rating-filter">
-                    {renderStars(5)}
-                  </div>
-                </label>
-                <label className="checkbox-group">
-                  <input type="checkbox" defaultChecked />
-                  <div className="rating-filter">
-                    {renderStars(4)}
-                  </div>
-                </label>
-                <label className="checkbox-group">
-                  <input type="checkbox" />
-                  <div className="rating-filter">
-                    {renderStars(3)}
-                  </div>
-                </label>
-                <label className="checkbox-group">
-                  <input type="checkbox" />
-                  <div className="rating-filter">
-                    {renderStars(2)}
-                  </div>
-                </label>
-              </div>
-            )}
-          </div>
-
-          {viewMode === 'grid' && (
-            <div className="filter-group">
-              <div className="filter-header">
-                <h4>Manufacturer</h4><i className="fa-solid fa-chevron-down"></i>
-              </div>
-            </div>
-          )}
         </aside>
 
         {/* Main Content */}
         <main className="listing-main">
           <div className="listing-top-bar">
-            <div className="item-count"><span>12,911 items in <strong>Mobile accessory</strong></span></div>
+            <div className="item-count"><span>{displayedProducts.length} items found</span></div>
             <div className="view-options">
               <label className="checkbox-group" style={{ marginBottom: 0 }}><input type="checkbox" /> <span>Verified only</span></label>
               <select style={{ width: '120px' }} defaultValue="Featured">
@@ -374,21 +332,17 @@ export default function Listing() {
             </div>
           </div>
 
-          {viewMode === 'grid' && (
-            <div className="active-filters desktop-only">
-              <div className="filter-tag">Samsung <i className="fa-solid fa-xmark"></i></div>
-              <div className="filter-tag">Apple <i className="fa-solid fa-xmark"></i></div>
-              <div className="filter-tag">Poco <i className="fa-solid fa-xmark"></i></div>
-              <div className="filter-tag">Metallic <i className="fa-solid fa-xmark"></i></div>
-              <div className="filter-tag">4 star <i className="fa-solid fa-xmark"></i></div>
-              <div className="filter-tag">3 star <i className="fa-solid fa-xmark"></i></div>
-              <span className="clear-filters" style={{ color: 'var(--primary-color)', cursor: 'pointer', alignSelf: 'center' }}>Clear all filter</span>
-            </div>
-          )}
+          <div className="active-filters desktop-only">
+            <div className="filter-tag">Samsung <i className="fa-solid fa-xmark"></i></div>
+            <div className="filter-tag">Apple <i className="fa-solid fa-xmark"></i></div>
+            <div className="filter-tag">Poco <i className="fa-solid fa-xmark"></i></div>
+            <div className="filter-tag">Metallic <i className="fa-solid fa-xmark"></i></div>
+            <span className="clear-filters" style={{ color: 'var(--primary-color)', cursor: 'pointer', alignSelf: 'center' }}>Clear all filter</span>
+          </div>
 
           {/* Product List / Grid */}
           <div className={viewMode === 'grid' ? 'product-grid-container' : 'product-list-container'}>
-            {products.map(product => (
+            {displayedProducts.map(product => (
               <div key={product.id} className={viewMode === 'grid' ? 'product-grid-item' : 'product-list-item'}>
                 <div className={viewMode === 'grid' ? 'product-grid-img' : 'product-list-img'}>
                   <img src={product.image} alt="" style={viewMode === 'grid' ? { width: '150px' } : {}} />
@@ -399,16 +353,20 @@ export default function Listing() {
                     <div className="grid-info-row">
                       <div className="grid-price-box">
                         <div className="price-group">
-                          <span className="price">{product.price}</span>
-                          {product.oldPrice && <span className="old-price">{product.oldPrice}</span>}
+                          <span className="price">{formatPrice(product.price)}</span>
+                          {product.oldPrice && <span className="old-price">{formatPrice(product.oldPrice)}</span>}
                         </div>
                         <div className="grid-rating-row">
                           {renderStars(product.stars)}
                           <span className="rating-num">{product.rating}</span>
                         </div>
                       </div>
-                      <div className="heart-btn" style={{ width: '35px', height: '35px', color: 'var(--primary-color)', border: '1px solid var(--gray-300)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
-                        <i className="fa-regular fa-heart"></i>
+                      <div 
+                        className="heart-btn" 
+                        onClick={(e) => handleSaveProduct(e, product.id)}
+                        style={{ width: '35px', height: '35px', color: savedItems.some(item => item.productId === product.id) ? 'var(--red)' : 'var(--primary-color)', border: '1px solid var(--gray-300)', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                      >
+                        <i className={savedItems.some(item => item.productId === product.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
                       </div>
                     </div>
                     <p className="title">{product.title}</p>
@@ -416,12 +374,12 @@ export default function Listing() {
                 ) : (
                   <>
                     <div className="product-list-info">
-                      <a href="#">
+                      <a href="#" onClick={(e) => { e.preventDefault(); navigate(`/product?id=${product.id}`); }}>
                         <h4>{product.title}</h4>
                       </a>
                       <div className="price-row">
-                        <span className="price">{product.price}</span>
-                        {product.oldPrice && <span className="old-price">{product.oldPrice}</span>}
+                        <span className="price">{formatPrice(product.price)}</span>
+                        {product.oldPrice && <span className="old-price">{formatPrice(product.oldPrice)}</span>}
                       </div>
                       <div className="rating-row">
                         {renderStars(product.stars)}
@@ -431,10 +389,16 @@ export default function Listing() {
                         <span className="dot-separator" style={{ margin: '0 10px' }}>&bull;</span>
                         <span className="shipping-status">Free Shipping</span>
                       </div>
-                      <p className="product-list-desc">{product.desc}</p>
-                      <a href="#" className="view-details-btn">View details</a>
+                      <p className="product-list-desc">{product.description || product.desc}</p>
+                      <a href="#" className="view-details-btn" onClick={(e) => { e.preventDefault(); navigate(`/product?id=${product.id}`); }}>View details</a>
                     </div>
-                    <div className="heart-btn"><i className="fa-regular fa-heart"></i></div>
+                    <div 
+                      className="heart-btn" 
+                      onClick={(e) => handleSaveProduct(e, product.id)}
+                      style={{ cursor: 'pointer', color: savedItems.some(item => item.productId === product.id) ? 'var(--red)' : 'var(--primary-color)' }}
+                    >
+                      <i className={savedItems.some(item => item.productId === product.id) ? "fa-solid fa-heart" : "fa-regular fa-heart"}></i>
+                    </div>
                   </>
                 )}
               </div>
@@ -446,36 +410,7 @@ export default function Listing() {
             <div className="page-btn"><i className="fa-solid fa-chevron-left"></i></div>
             <div className="page-btn active">1</div>
             <div className="page-btn">2</div>
-            <div className="page-btn">3</div>
             <div className="page-btn"><i className="fa-solid fa-chevron-right"></i></div>
-          </div>
-
-          {/* Mobile-only "You may also like" Section */}
-          <div className="mobile-recommendations mobile-only">
-            <h3 className="section-title">You may also like</h3>
-            <div className="recommendations-scroll">
-              <div className="recommendation-card">
-                <div className="rec-img"><img src="./public/assets/Layout/alibaba/Image/cloth/image 26.png" alt="" /></div>
-                <div className="rec-info">
-                  <span className="price">$10.30</span>
-                  <p className="title">Solid Backpack blue jeans large size</p>
-                </div>
-              </div>
-              <div className="recommendation-card">
-                <div className="rec-img"><img src="./public/assets/Image/tech/image 34.png" alt="" /></div>
-                <div className="rec-info">
-                  <span className="price">$10.30</span>
-                  <p className="title">T-shirts with multiple colors, for men</p>
-                </div>
-              </div>
-              <div className="recommendation-card">
-                <div className="rec-img"><img src="./public/assets/Layout/alibaba/Image/cloth/Bitmap.png" alt="" /></div>
-                <div className="rec-info">
-                  <span className="price">$10.30</span>
-                  <p className="title">T-shirts with multiple colors for men</p>
-                </div>
-              </div>
-            </div>
           </div>
         </main>
       </div>

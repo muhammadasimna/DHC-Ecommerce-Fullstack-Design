@@ -1,8 +1,54 @@
-import React, { useState } from 'react';
-import { Link, Outlet, useLocation } from 'react-router-dom';
+import React, { useRef, useState } from 'react';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 export function Header() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const { cartItems } = useCart();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const userMenuRef = useRef(null);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    setSearchTerm(params.get('q') || '');
+  }, [location.search]);
+
+  React.useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
+        setIsUserMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+    setIsSidebarOpen(false);
+    setIsUserMenuOpen(false);
+  };
+
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const params = new URLSearchParams(location.search);
+    const value = searchTerm.trim();
+    if (value) {
+      params.set('q', value);
+    } else {
+      params.delete('q');
+    }
+    const qs = params.toString();
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+  };
 
   return (
     <>
@@ -15,7 +61,16 @@ export function Header() {
           <div className="sidebar-user">
             <i className="fa-solid fa-circle-user avatar-icon"></i>
             <div className="auth-links">
-              <Link to="#">Sign in</Link> | <Link to="#">Register</Link>
+              {user ? (
+                <>
+                  <span style={{ fontWeight: 600, color: 'var(--dark-color)', display: 'block' }}>Hi, {user.username}</span>
+                  <span onClick={handleLogout} style={{ cursor: 'pointer', fontSize: '13px', color: 'var(--red)', fontWeight: 500 }}>Sign out</span>
+                </>
+              ) : (
+                <>
+                  <Link to="/login" onClick={() => setIsSidebarOpen(false)}>Sign in</Link> | <Link to="/signup" onClick={() => setIsSidebarOpen(false)}>Register</Link>
+                </>
+              )}
             </div>
           </div>
           <button className="close-btn" onClick={() => setIsSidebarOpen(false)}>✕</button>
@@ -24,8 +79,10 @@ export function Header() {
           <ul className="sidebar-menu">
             <li><Link to="/" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-house"></i> Home</Link></li>
             <li><Link to="/listing" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-list"></i> Categories</Link></li>
+            {user && <li><Link to="/my-products" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-box"></i> My Products</Link></li>}
+            <li><Link to="/cart" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-cart-shopping"></i> My Cart {cartCount > 0 && `(${cartCount})`}</Link></li>
             <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-regular fa-heart"></i> Favorites</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-box"></i> My orders</Link></li>
+            <li><Link to="/orders" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-box"></i> My orders</Link></li>
           </ul>
           <hr className="sidebar-divider" />
           <ul className="sidebar-menu">
@@ -52,27 +109,84 @@ export function Header() {
               <img src="/assets/Layout/Brand/logo-colored.png" alt="Brand Logo" />
             </Link>
           </div>
-          <div className="search-bar">
-            <input type="text" placeholder="Search" />
+          <form className="search-bar" onSubmit={handleSearch}>
+            <input
+              type="text"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
             <select defaultValue="All category">
               <option value="All category">All category</option>
             </select>
-            <button className="btn btn-primary">Search</button>
-          </div>
+            <button type="submit" className="btn btn-primary">Search</button>
+          </form>
           <div className="header-actions">
-            <Link to="/cart" className="action-item">
+            <Link to="/cart" className="action-item" style={{ position: 'relative' }}>
               <i className="fa-solid fa-cart-shopping"></i>
               <span>My cart</span>
+              {cartCount > 0 && (
+                <span style={{
+                  position: 'absolute',
+                  top: '-5px',
+                  right: '5px',
+                  backgroundColor: 'var(--orange)',
+                  color: 'white',
+                  borderRadius: '50%',
+                  width: '18px',
+                  height: '18px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '11px',
+                  fontWeight: 'bold'
+                }}>
+                  {cartCount}
+                </span>
+              )}
             </Link>
-            <Link to="#" className="action-item">
-              <i className="fa-regular fa-user"></i>
-              <span>Profile</span>
-            </Link>
+            {user ? (
+              <div ref={userMenuRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="action-item"
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
+                >
+                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
+                    {String(user.username || 'M').charAt(0).toUpperCase()}
+                  </div>
+                  <span>Me</span>
+                </button>
+
+                {isUserMenuOpen && (
+                  <div style={{ position: 'absolute', top: '46px', right: 0, minWidth: '150px', background: 'var(--white)', border: '1px solid var(--gray-300)', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', zIndex: 2000, overflow: 'hidden' }}>
+                    <Link to="/my-products" onClick={() => setIsUserMenuOpen(false)} style={{ display: 'block', padding: '10px 12px', fontSize: '14px', color: 'var(--dark-color)' }}>
+                      <i className="fa-regular fa-user" style={{ marginRight: '8px' }}></i>
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      style={{ width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: '10px 12px', fontSize: '14px', color: 'var(--red)', cursor: 'pointer' }}
+                    >
+                      <i className="fa-solid fa-right-from-bracket" style={{ marginRight: '8px' }}></i>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="action-item">
+                <i className="fa-regular fa-user"></i>
+                <span>Sign in</span>
+              </Link>
+            )}
             <Link to="#" className="action-item desktop-only">
               <i className="fa-regular fa-message"></i>
               <span>Message</span>
             </Link>
-            <Link to="#" className="action-item desktop-only">
+            <Link to="/orders" className="action-item desktop-only">
               <i className="fa-regular fa-heart"></i>
               <span>Orders</span>
             </Link>
@@ -89,6 +203,7 @@ export function Header() {
             </div>
             <ul className="nav-links">
               <li><Link to="/listing">Hot offers</Link></li>
+              {user && <li><Link to="/my-products">My Products</Link></li>}
               <li><Link to="/product">Gift boxes</Link></li>
               <li><Link to="#">Projects</Link></li>
               <li><Link to="#">Menu item</Link></li>
@@ -180,8 +295,8 @@ export function Footer({ showNewsletter = true, showLinks = true }) {
                 <div className="footer-col">
                   <h4>For users</h4>
                   <ul>
-                    <li><a href="#">Login</a></li>
-                    <li><a href="#">Register</a></li>
+                    <li><Link to="/login">Login</Link></li>
+                    <li><Link to="/signup">Register</Link></li>
                     <li><a href="#">Settings</a></li>
                     <li><a href="#">My Orders</a></li>
                   </ul>
@@ -215,13 +330,13 @@ export function Footer({ showNewsletter = true, showLinks = true }) {
 export function Layout() {
   const location = useLocation();
   const isCart = location.pathname === '/cart';
-  const isProduct = location.pathname === '/product';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
   return (
     <>
-      <Header />
+      {!isAuthPage && <Header />}
       <Outlet />
-      <Footer showNewsletter={!isCart} />
+      {!isAuthPage && <Footer showNewsletter={!isCart} />}
     </>
   );
 }

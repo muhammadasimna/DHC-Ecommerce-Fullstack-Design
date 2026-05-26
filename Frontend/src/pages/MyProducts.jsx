@@ -94,6 +94,12 @@ export default function MyProducts() {
       description: productForm.description
     };
 
+    if (payload.oldPrice != null && payload.oldPrice <= payload.price) {
+      setAddedMessage('Old Price must be greater than Price to apply an offer.');
+      setTimeout(() => setAddedMessage(''), 3000);
+      return;
+    }
+
     const url = editingProductId ? `${backendUrl}/products/${editingProductId}` : `${backendUrl}/products`;
     const method = editingProductId ? 'PUT' : 'POST';
     const res = await fetch(url, {
@@ -302,8 +308,8 @@ export default function MyProducts() {
                   <input className="my-products-input" value={productForm.price} onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))} type="number" step="0.01" placeholder="Price" required />
                 <input className="my-products-input" value={productForm.oldPrice} onChange={(e) => setProductForm(prev => ({ ...prev, oldPrice: e.target.value }))} type="number" step="0.01" placeholder="Old Price (optional)" />
                 <input className="my-products-input" value={productForm.orders} onChange={(e) => setProductForm(prev => ({ ...prev, orders: e.target.value }))} type="number" placeholder="Orders" />
-                <input className="my-products-input" value={productForm.rating} onChange={(e) => setProductForm(prev => ({ ...prev, rating: e.target.value }))} type="number" step="0.1" placeholder="Rating (0-10)" />
-                <input className="my-products-input" value={productForm.stars} onChange={(e) => setProductForm(prev => ({ ...prev, stars: e.target.value }))} type="number" step="0.1" placeholder="Stars (0-5)" />
+                <input className="my-products-input" value={productForm.rating} onChange={(e) => setProductForm(prev => ({ ...prev, rating: e.target.value }))} type="number" max={10.0} min={0} step="0.1" placeholder="Rating (0-10)" />
+                <input className="my-products-input" value={productForm.stars} onChange={(e) => setProductForm(prev => ({ ...prev, stars: e.target.value }))} type="number" max={5.0} min={0} step="0.1" placeholder="Stars (0-5)" />
               </div>
               <textarea className="my-products-textarea" value={productForm.description} onChange={(e) => setProductForm(prev => ({ ...prev, description: e.target.value }))} placeholder="Description" rows={3} required />
               <div className="my-products-actions">

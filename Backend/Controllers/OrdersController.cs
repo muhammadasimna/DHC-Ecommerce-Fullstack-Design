@@ -108,6 +108,59 @@ namespace Backend.Controllers
             return Ok(new { message = "Order placed successfully", orderId = order.Id });
         }
 
+        [HttpPost("checkout-item/{cartItemId:int}")]
+        public async Task<IActionResult> CheckoutSingleItem(int cartItemId)
+        {
+            var userId = GetCurrentUserId();
+            if (userId == null) return Unauthorized(new { message = "Unauthorized access" });
+
+            var cartItem = await _context.CartItems
+                .Include(c => c.Product)
+                .FirstOrDefaultAsync(c => c.Id == cartItemId && c.UserId == userId.Value && !c.IsSavedForLater);
+
+            if (cartItem == null)
+            {
+                return NotFound(new { message = "Cart item not found" });
+            }
+
+            var subtotal = (cartItem.Product?.Price ?? 0m) * cartItem.Quantity;
+            var discount = subtotal > 100m ? 10m : 0m;
+            var tax = subtotal * 0.05m;
+            var total = subtotal - discount + tax;
+
+            var order = new Order
+            {
+                UserId = userId.Value,
+                Subtotal = subtotal,
+                Discount = discount,
+                Tax = tax,
+                Total = total,
+                Status = "Placed",
+                CreatedAtUtc = DateTime.UtcNow
+            };
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync();
+
+            var orderItem = new OrderItem
+            {
+                OrderId = order.Id,
+                ProductId = cartItem.ProductId,
+                ProductTitle = cartItem.Product?.Title ?? "Product",
+                ProductImage = cartItem.Product?.Image ?? string.Empty,
+                UnitPrice = cartItem.Product?.Price ?? 0m,
+                Quantity = cartItem.Quantity,
+                Size = cartItem.Size,
+                Color = cartItem.Color
+            };
+
+            _context.OrderItems.Add(orderItem);
+            _context.CartItems.Remove(cartItem);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Item checked out successfully", orderId = order.Id });
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetMyOrders()
         {

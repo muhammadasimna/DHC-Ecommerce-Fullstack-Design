@@ -122,7 +122,52 @@ export function Header() {
             <button type="submit" className="btn btn-primary">Search</button>
           </form>
           <div className="header-actions">
-            <Link to="/cart" className="action-item" style={{ position: 'relative' }}>
+            {user ? (
+              <div ref={userMenuRef} style={{ position: 'relative' }}>
+                <button
+                  type="button"
+                  className="action-item action-profile"
+                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
+                  style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
+                >
+                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
+                    {String(user.username || 'M').charAt(0).toUpperCase()}
+                  </div>
+                  <span>Profile</span>
+                </button>
+
+                {isUserMenuOpen && (
+                  <div style={{ position: 'absolute', top: '46px', right: 0, minWidth: '150px', background: 'var(--white)', border: '1px solid var(--gray-300)', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', zIndex: 2000, overflow: 'hidden' }}>
+                    <Link to="/my-products" onClick={() => setIsUserMenuOpen(false)} style={{ display: 'block', padding: '10px 12px', fontSize: '14px', color: 'var(--dark-color)' }}>
+                      <i className="fa-regular fa-user" style={{ marginRight: '8px' }}></i>
+                      Profile
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      style={{ width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: '10px 12px', fontSize: '14px', color: 'var(--red)', cursor: 'pointer' }}
+                    >
+                      <i className="fa-solid fa-right-from-bracket" style={{ marginRight: '8px' }}></i>
+                      Sign out
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <Link to="/login" className="action-item action-profile">
+                <i className="fa-regular fa-user"></i>
+                <span>Profile</span>
+              </Link>
+            )}
+            <Link to="#" className="action-item action-message desktop-only">
+              <i className="fa-regular fa-message"></i>
+              <span>Message</span>
+            </Link>
+            <Link to="/orders" className="action-item action-orders desktop-only">
+              <i className="fa-regular fa-heart"></i>
+              <span>Orders</span>
+            </Link>
+            <Link to="/cart" className="action-item action-cart" style={{ position: 'relative' }}>
               <i className="fa-solid fa-cart-shopping"></i>
               <span>My cart</span>
               {cartCount > 0 && (
@@ -144,51 +189,6 @@ export function Header() {
                   {cartCount}
                 </span>
               )}
-            </Link>
-            {user ? (
-              <div ref={userMenuRef} style={{ position: 'relative' }}>
-                <button
-                  type="button"
-                  className="action-item"
-                  onClick={() => setIsUserMenuOpen((prev) => !prev)}
-                  style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
-                >
-                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
-                    {String(user.username || 'M').charAt(0).toUpperCase()}
-                  </div>
-                  <span>Me</span>
-                </button>
-
-                {isUserMenuOpen && (
-                  <div style={{ position: 'absolute', top: '46px', right: 0, minWidth: '150px', background: 'var(--white)', border: '1px solid var(--gray-300)', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', zIndex: 2000, overflow: 'hidden' }}>
-                    <Link to="/my-products" onClick={() => setIsUserMenuOpen(false)} style={{ display: 'block', padding: '10px 12px', fontSize: '14px', color: 'var(--dark-color)' }}>
-                      <i className="fa-regular fa-user" style={{ marginRight: '8px' }}></i>
-                      Profile
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      style={{ width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: '10px 12px', fontSize: '14px', color: 'var(--red)', cursor: 'pointer' }}
-                    >
-                      <i className="fa-solid fa-right-from-bracket" style={{ marginRight: '8px' }}></i>
-                      Sign out
-                    </button>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <Link to="/login" className="action-item">
-                <i className="fa-regular fa-user"></i>
-                <span>Sign in</span>
-              </Link>
-            )}
-            <Link to="#" className="action-item desktop-only">
-              <i className="fa-regular fa-message"></i>
-              <span>Message</span>
-            </Link>
-            <Link to="/orders" className="action-item desktop-only">
-              <i className="fa-regular fa-heart"></i>
-              <span>Orders</span>
             </Link>
           </div>
         </div>

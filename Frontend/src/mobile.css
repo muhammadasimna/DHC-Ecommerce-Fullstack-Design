@@ -176,24 +176,36 @@
 
     .header-actions {
         display: flex;
-        gap: 15px;
+        gap: 16px;
         align-items: center;
+        justify-content: flex-end;
         grid-column: 4;
         grid-row: 1;
+        padding: 0;
+        border: none;
+        min-width: auto;
     }
 
     .desktop-only {
         display: none !important;
     }
 
-    /* Hide Profile, Cart text */
+    /* Mobile: icon-only header actions */
     .action-item span {
         display: none;
     }
 
     .action-item i {
-        /* font-size: 22px; */
+        font-size: 20px;
         color: var(--dark-color);
+    }
+
+    .header-actions .action-cart {
+        order: 1;
+    }
+
+    .header-actions .action-profile {
+        order: 2;
     }
 
     /* Search Bar */
@@ -1043,8 +1055,8 @@
     /* Custom Grid Layout Overrides on Mobile */
     .product-grid-container {
         display: grid !important;
-        grid-template-columns: repeat(2, 1fr) !important;
-        gap: 1px !important;
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 8px !important;
         padding: 0 !important;
     }
 
@@ -1058,6 +1070,7 @@
         gap: 8px !important;
         margin-bottom: 0 !important;
         box-shadow: none !important;
+        min-width: 0 !important;
     }
 
     .product-grid-img {
@@ -1086,21 +1099,26 @@
     .grid-info-row {
         display: flex !important;
         justify-content: space-between !important;
-        align-items: center !important;
+        align-items: flex-start !important;
         /* Center price and heart button vertically */
         margin-bottom: 0 !important;
         width: 100% !important;
+        gap: 6px !important;
     }
 
     .grid-price-box {
         display: flex !important;
         flex-direction: column !important;
         gap: 2px !important;
+        flex: 1 1 auto !important;
+        min-width: 0 !important;
     }
 
     .grid-price-box .price-group {
         display: flex !important;
         align-items: center !important;
+        flex-wrap: wrap !important;
+        gap: 6px !important;
     }
 
     .grid-price-box .price {
@@ -1141,12 +1159,28 @@
         margin-top: 4px !important;
         line-height: 1.3 !important;
         font-weight: 400 !important;
+        display: -webkit-box !important;
+        -webkit-line-clamp: 2 !important;
+        -webkit-box-orient: vertical !important;
+        overflow: hidden !important;
+    }
+
+    .product-grid-item .old-price {
+        font-size: 12px !important;
+    }
+
+    .product-grid-item .offer-badge {
+        font-size: 10px !important;
+        padding: 2px 6px !important;
+        white-space: nowrap !important;
     }
 
     /* Heart button next to price on mobile grid */
     .product-grid-item .heart-btn {
         width: 32px !important;
         height: 32px !important;
+        min-width: 32px !important;
+        flex: 0 0 32px !important;
         border: 1px solid #E3E8EE !important;
         border-radius: 6px !important;
         display: flex !important;
@@ -1156,6 +1190,7 @@
         /* Blue color matching mockup */
         background: var(--white) !important;
         cursor: pointer !important;
+        margin-top: 0 !important;
     }
 
     .product-grid-item .heart-btn i {
@@ -1854,3 +1889,6 @@
         height: 52px !important;
     }
 }
+
+    .action-profile .profile-avatar { display: none !important; }
+    .mobile-profile-icon { display: inline-block !important; font-size: 19px !important; color: var(--dark-color) !important; }

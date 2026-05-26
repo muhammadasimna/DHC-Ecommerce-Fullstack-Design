@@ -101,7 +101,9 @@ export default function Home() {
           <div className="hero-right">
             <div className="user-card">
               <div className="user-info">
-                <div className="user-avatar" style={{ backgroundImage: "url('./public/assets/Layout1/Image/flags/icon.png')", backgroundSize: 'cover' }}></div>
+                <div className="user-avatar">
+                  {user ? String(user.username || 'U').charAt(0).toUpperCase() : <i className="fa-regular fa-user"></i>}
+                </div>
                 {user ? (
                   <span>Hi, {user.username} <br /> Welcome back!</span>
                 ) : (

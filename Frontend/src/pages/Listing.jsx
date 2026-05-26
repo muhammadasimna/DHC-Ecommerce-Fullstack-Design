@@ -1,15 +1,43 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useCart } from '../context/CartContext';
 
 export default function Listing() {
   const [viewMode, setViewMode] = useState('grid');
-  const { backendUrl } = useAuth();
+  const { backendUrl, token, user } = useAuth();
   const { addToCart, saveProductDirectly, savedItems = [], removeFromCart } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
   const [addedMessage, setAddedMessage] = useState('');
+  const [appliedMinPrice, setAppliedMinPrice] = useState(0);
+  const [appliedMaxPrice, setAppliedMaxPrice] = useState(999999);
+  const [tempMinPrice, setTempMinPrice] = useState(0);
+  const [tempMaxPrice, setTempMaxPrice] = useState(999999);
+  const defaultBrandOptions = ['Samsung', 'Apple', 'Huawei', 'Pocco', 'Lenovo'];
+  const defaultFeatureOptions = ['Metallic', 'Plastic cover', '8GB Ram', 'Super power', 'Large Memory'];
+  const defaultCategoryOptions = ['Mobile accessory', 'Electronics', 'Smartphones', 'Modern tech'];
+  const [selectedBrands, setSelectedBrands] = useState(['Samsung', 'Apple', 'Pocco']);
+  const [selectedFeatures, setSelectedFeatures] = useState(['Metallic']);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [selectedCondition, setSelectedCondition] = useState('Any');
+  const [selectedRatings, setSelectedRatings] = useState([]);
+  const [showAllSections, setShowAllSections] = useState({
+    category: false,
+    brands: false,
+    features: false,
+    condition: false,
+    ratings: false
+  });
+  const hasSyncedInitialFilters = useRef(false);
+  const [openSections, setOpenSections] = useState({
+    category: true,
+    brands: true,
+    features: true,
+    price: true,
+    condition: true,
+    ratings: true
+  });
 
   const defaultProducts = [
     {
@@ -80,18 +108,40 @@ export default function Listing() {
     }
   ];
 
-  const [products, setProducts] = useState(defaultProducts);
+  const normalizeProduct = (product) => ({
+    ...product,
+    title: product.title || product.name || 'Untitled product',
+    description: product.description || product.desc || '',
+    price: Number(product.price || 0),
+    oldPrice: product.oldPrice == null ? null : Number(product.oldPrice),
+    rating: Number(product.rating || 0),
+    stars: Number(product.stars || 0),
+    orders: Number(product.orders || 0)
+  });
+
+  const getOfferPercent = (product) => {
+    const oldPrice = Number(product.oldPrice || 0);
+    const price = Number(product.price || 0);
+    if (oldPrice > price && price > 0) {
+      return Math.round(((oldPrice - price) / oldPrice) * 100);
+    }
+    return 0;
+  };
+
+  const [products, setProducts] = useState(defaultProducts.map(normalizeProduct));
 
   useEffect(() => {
     document.body.classList.add('listing-page');
 
     const fetchProducts = async () => {
       try {
-        const res = await fetch(`${backendUrl}/products`);
+        const res = await fetch(`${backendUrl}/products`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
         if (res.ok) {
           const data = await res.json();
           if (data && data.length > 0) {
-            setProducts(data);
+            setProducts(data.map(normalizeProduct));
           }
         }
       } catch (err) {
@@ -104,7 +154,7 @@ export default function Listing() {
     return () => {
       document.body.classList.remove('listing-page');
     };
-  }, [backendUrl]);
+  }, [backendUrl, token]);
 
 
   const handleAddToCart = async (e, productId) => {
@@ -163,13 +213,160 @@ export default function Listing() {
   };
 
   const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
+  const visibleProducts = products.filter((product) => {
+    const ownerId = Number(product.userId ?? product.UserId ?? 0);
+    const currentUserId = Number(user?.id ?? 0);
+    return !(currentUserId > 0 && ownerId === currentUserId);
+  });
+
   const displayedProducts = query
-    ? products.filter((product) =>
+    ? visibleProducts.filter((product) =>
         [product.title, product.category, product.description || product.desc]
           .filter(Boolean)
           .some((v) => String(v).toLowerCase().includes(query))
       )
-    : products;
+    : visibleProducts;
+
+  const uniqueSorted = (arr) =>
+    [...new Set(arr.map((x) => String(x || '').trim()).filter(Boolean))].sort((a, b) => a.localeCompare(b));
+
+  const categoriesFromProducts = uniqueSorted(visibleProducts.map((p) => p.category));
+  const brandsFromProducts = uniqueSorted(
+    visibleProducts.flatMap((p) => (Array.isArray(p.brands) ? p.brands : p.brand ? [p.brand] : []))
+  );
+  const featuresFromProducts = uniqueSorted(
+    visibleProducts.flatMap((p) => (Array.isArray(p.features) ? p.features : p.feature ? [p.feature] : []))
+  );
+
+  const categoryOptions = uniqueSorted([...defaultCategoryOptions, ...categoriesFromProducts]);
+  const brandOptions = uniqueSorted([...defaultBrandOptions, ...brandsFromProducts]);
+  const featureOptions = uniqueSorted([...defaultFeatureOptions, ...featuresFromProducts]);
+
+  const visibleCategories = showAllSections.category ? categoryOptions : categoryOptions.slice(0, 4);
+  const visibleBrands = showAllSections.brands ? brandOptions : brandOptions.slice(0, 5);
+  const visibleFeatures = showAllSections.features ? featureOptions : featureOptions.slice(0, 5);
+  const conditionOptions = ['Any', 'Refurbished', 'Brand new', 'Old items'];
+  const visibleConditions = showAllSections.condition ? conditionOptions : conditionOptions.slice(0, 4);
+  const ratingOptions = [5, 4, 3, 2];
+  const visibleRatings = showAllSections.ratings ? ratingOptions : ratingOptions.slice(0, 4);
+
+  useEffect(() => {
+    if (hasSyncedInitialFilters.current) return;
+    if (!visibleProducts.length) return;
+
+    const containsTag = (product, tag) => {
+      const haystack = `${product.title || ''} ${product.category || ''} ${product.description || product.desc || ''} ${product.brand || ''} ${(product.features || []).join(' ')}`.toLowerCase();
+      if (tag === 'Pocco') return haystack.includes('pocco') || haystack.includes('poco');
+      return haystack.includes(String(tag).toLowerCase());
+    };
+
+    const nextBrands = selectedBrands.filter((brand) =>
+      visibleProducts.some((product) => containsTag(product, brand))
+    );
+    const nextFeatures = selectedFeatures.filter((feature) =>
+      visibleProducts.some((product) => containsTag(product, feature))
+    );
+
+    if (nextBrands.length !== selectedBrands.length) {
+      setSelectedBrands(nextBrands);
+    }
+    if (nextFeatures.length !== selectedFeatures.length) {
+      setSelectedFeatures(nextFeatures);
+    }
+
+    hasSyncedInitialFilters.current = true;
+  }, [visibleProducts, selectedBrands, selectedFeatures]);
+
+  const priceFilteredProducts = displayedProducts.filter((product) => {
+    const p = Number(product.price || 0);
+    return p >= appliedMinPrice && p <= appliedMaxPrice;
+  });
+
+  const finalFilteredProducts = priceFilteredProducts.filter((product) => {
+    const haystack = `${product.title || ''} ${product.category || ''} ${product.description || product.desc || ''}`.toLowerCase();
+    const productCategory = String(product.category || '').toLowerCase();
+
+    const matchesCategory =
+      !selectedCategory ||
+      productCategory.includes(selectedCategory.toLowerCase());
+
+    const matchesBrand =
+      selectedBrands.length === 0 ||
+      selectedBrands.some((brand) => {
+        if (brand === 'Pocco') return haystack.includes('pocco') || haystack.includes('poco');
+        return haystack.includes(brand.toLowerCase());
+      });
+
+    const matchesFeature =
+      selectedFeatures.length === 0 ||
+      selectedFeatures.some((feature) => haystack.includes(feature.toLowerCase()));
+
+    const matchesCondition =
+      selectedCondition === 'Any' ||
+      (selectedCondition === 'Brand new' && Number(product.oldPrice || 0) === 0) ||
+      (selectedCondition === 'Refurbished' && Number(product.oldPrice || 0) > 0) ||
+      (selectedCondition === 'Old items' && Number(product.rating || 0) < 7);
+
+    const matchesRatings =
+      selectedRatings.length === 0 ||
+      selectedRatings.some((minStars) => Number(product.stars || 0) >= minStars);
+
+    return matchesCategory && matchesBrand && matchesFeature && matchesCondition && matchesRatings;
+  });
+
+  const sliderMax = Math.max(
+    1000,
+    ...visibleProducts.map((p) => Number(p.price || 0)),
+    tempMaxPrice,
+    appliedMaxPrice
+  );
+
+  const leftPercent = (tempMinPrice / sliderMax) * 100;
+  const rightPercent = (tempMaxPrice / sliderMax) * 100;
+
+  const handleMinRangeChange = (value) => {
+    const v = Number(value || 0);
+    setTempMinPrice(Math.min(v, tempMaxPrice));
+  };
+
+  const handleMaxRangeChange = (value) => {
+    const v = Number(value || 0);
+    setTempMaxPrice(Math.max(v, tempMinPrice));
+  };
+
+  const applyPriceFilter = () => {
+    const min = Math.max(0, Math.min(tempMinPrice, tempMaxPrice));
+    const max = Math.max(min, tempMaxPrice);
+    setTempMinPrice(min);
+    setTempMaxPrice(max);
+    setAppliedMinPrice(min);
+    setAppliedMaxPrice(max);
+  };
+
+  const toggleSelection = (value, setState) => {
+    setState((prev) => (prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]));
+  };
+
+  const removeSingleFilter = (value) => {
+    setSelectedBrands((prev) => prev.filter((x) => x !== value));
+    setSelectedFeatures((prev) => prev.filter((x) => x !== value));
+    setSelectedRatings((prev) => prev.filter((x) => x !== value));
+  };
+
+  const clearAllFilters = () => {
+    setSelectedCategory('');
+    setSelectedBrands([]);
+    setSelectedFeatures([]);
+    setSelectedCondition('Any');
+    setSelectedRatings([]);
+  };
+
+  const toggleSection = (key) => {
+    setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
+  const toggleSeeAll = (key) => {
+    setShowAllSections((prev) => ({ ...prev, [key]: !prev[key] }));
+  };
 
   return (
     <div className="container listing-page-container">
@@ -263,45 +460,205 @@ export default function Listing() {
         {/* Sidebar */}
         <aside className="sidebar">
           <div className="filter-group">
-            <div className="filter-header">
-              <h4>Category</h4><i className="fa-solid fa-chevron-up"></i>
+            <div className="filter-header" onClick={() => toggleSection('category')}>
+              <h4>Category</h4><i className={`fa-solid ${openSections.category ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
             </div>
-            <div className="filter-content">
+            <div className={`filter-content ${openSections.category ? '' : 'collapsed'}`}>
               <ul>
-                <li><a href="#">Mobile accessory</a></li>
-                <li><a href="#">Electronics</a></li>
-                <li><a href="#">Smartphones</a></li>
-                <li><a href="#">Modern tech</a></li>
+                {visibleCategories.map((cat) => (
+                  <li key={cat}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedCategory(cat)}
+                      style={{
+                        border: 'none',
+                        background: 'transparent',
+                        padding: 0,
+                        color: selectedCategory === cat ? 'var(--primary-color)' : 'var(--dark-color)',
+                        fontWeight: selectedCategory === cat ? 600 : 400,
+                        cursor: 'pointer'
+                      }}
+                    >
+                      {cat}
+                    </button>
+                  </li>
+                ))}
               </ul>
-              <a href="#" className="see-all">See all</a>
+              <button
+                type="button"
+                className="see-all"
+                onClick={() => toggleSeeAll('category')}
+                style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+              >
+                {showAllSections.category ? 'See less' : 'See all'}
+              </button>
             </div>
           </div>
 
           <div className="filter-group">
-            <div className="filter-header">
-              <h4>Brands</h4><i className="fa-solid fa-chevron-up"></i>
+            <div className="filter-header" onClick={() => toggleSection('brands')}>
+              <h4>Brands</h4><i className={`fa-solid ${openSections.brands ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
             </div>
-            <div className="filter-content">
-              <label className="checkbox-group"><input type="checkbox" defaultChecked /> <span>Samsung</span></label>
-              <label className="checkbox-group"><input type="checkbox" defaultChecked /> <span>Apple</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>Huawei</span></label>
-              <label className="checkbox-group"><input type="checkbox" defaultChecked /> <span>Pocco</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>Lenovo</span></label>
-              <a href="#" className="see-all">See all</a>
+            <div className={`filter-content ${openSections.brands ? '' : 'collapsed'}`}>
+              {visibleBrands.map((brand) => (
+                <label key={brand} className="checkbox-group">
+                  <input
+                    type="checkbox"
+                    checked={selectedBrands.includes(brand)}
+                    onChange={() => toggleSelection(brand, setSelectedBrands)}
+                  /> <span>{brand}</span>
+                </label>
+              ))}
+              {brandOptions.length > 5 && (
+                <button
+                  type="button"
+                  className="see-all"
+                  onClick={() => toggleSeeAll('brands')}
+                  style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                >
+                  {showAllSections.brands ? 'See less' : 'See all'}
+                </button>
+              )}
             </div>
           </div>
 
           <div className="filter-group">
-            <div className="filter-header">
-              <h4>Features</h4><i className="fa-solid fa-chevron-up"></i>
+            <div className="filter-header" onClick={() => toggleSection('features')}>
+              <h4>Features</h4><i className={`fa-solid ${openSections.features ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
             </div>
-            <div className="filter-content">
-              <label className="checkbox-group"><input type="checkbox" defaultChecked /> <span>Metallic</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>Plastic cover</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>8GB Ram</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>Super power</span></label>
-              <label className="checkbox-group"><input type="checkbox" /> <span>Large Memory</span></label>
-              <a href="#" className="see-all">See all</a>
+            <div className={`filter-content ${openSections.features ? '' : 'collapsed'}`}>
+              {visibleFeatures.map((feature) => (
+                <label key={feature} className="checkbox-group">
+                  <input
+                    type="checkbox"
+                    checked={selectedFeatures.includes(feature)}
+                    onChange={() => toggleSelection(feature, setSelectedFeatures)}
+                  /> <span>{feature}</span>
+                </label>
+              ))}
+              {featureOptions.length > 5 && (
+                <button
+                  type="button"
+                  className="see-all"
+                  onClick={() => toggleSeeAll('features')}
+                  style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                >
+                  {showAllSections.features ? 'See less' : 'See all'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-header" onClick={() => toggleSection('price')}>
+              <h4>Price range</h4><i className={`fa-solid ${openSections.price ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+            </div>
+            <div className={`filter-content price-range-section ${openSections.price ? '' : 'collapsed'}`}>
+              <div className="price-range-visual" aria-hidden="true">
+                <div className="range-track"></div>
+                <div className="range-fill" style={{ left: `${leftPercent}%`, right: `${100 - rightPercent}%` }}></div>
+                <span className="range-thumb thumb-left" style={{ left: `calc(${leftPercent}% - 7px)` }}></span>
+                <span className="range-thumb thumb-right" style={{ left: `calc(${rightPercent}% - 7px)` }}></span>
+                <input
+                  className="range-input range-input-min"
+                  type="range"
+                  min="0"
+                  max={sliderMax}
+                  value={tempMinPrice}
+                  onChange={(e) => handleMinRangeChange(e.target.value)}
+                />
+                <input
+                  className="range-input range-input-max"
+                  type="range"
+                  min="0"
+                  max={sliderMax}
+                  value={tempMaxPrice}
+                  onChange={(e) => handleMaxRangeChange(e.target.value)}
+                />
+              </div>
+              <div className="price-range-labels">
+                <span>Min</span>
+                <span>Max</span>
+              </div>
+              <div className="price-inputs" style={{ marginBottom: '10px' }}>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={tempMinPrice}
+                  min="0"
+                  max={tempMaxPrice}
+                  onChange={(e) => handleMinRangeChange(e.target.value)}
+                />
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={tempMaxPrice}
+                  min={tempMinPrice}
+                  max={sliderMax}
+                  onChange={(e) => handleMaxRangeChange(e.target.value)}
+                />
+              </div>
+              <button className="btn btn-white price-apply-btn" type="button" onClick={applyPriceFilter}>Apply</button>
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-header" onClick={() => toggleSection('condition')}>
+              <h4>Condition</h4><i className={`fa-solid ${openSections.condition ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+            </div>
+            <div className={`filter-content ${openSections.condition ? '' : 'collapsed'}`}>
+              {visibleConditions.map((cond) => (
+                <label key={cond} className="checkbox-group">
+                  <input
+                    type="radio"
+                    name="condition"
+                    checked={selectedCondition === cond}
+                    onChange={() => setSelectedCondition(cond)}
+                  /> <span>{cond}</span>
+                </label>
+              ))}
+              {conditionOptions.length > 4 && (
+                <button
+                  type="button"
+                  className="see-all"
+                  onClick={() => toggleSeeAll('condition')}
+                  style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                >
+                  {showAllSections.condition ? 'See less' : 'See all'}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="filter-group">
+            <div className="filter-header" onClick={() => toggleSection('ratings')}>
+              <h4>Ratings</h4><i className={`fa-solid ${openSections.ratings ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
+            </div>
+            <div className={`filter-content ${openSections.ratings ? '' : 'collapsed'}`}>
+              {visibleRatings.map((star) => (
+                <label key={star} className="checkbox-group">
+                  <input
+                    type="checkbox"
+                    checked={selectedRatings.includes(star)}
+                    onChange={() => toggleSelection(star, setSelectedRatings)}
+                  />
+                  <span className="rating-filter">
+                    {[...Array(5)].map((_, i) => (
+                      <i key={`${star}-${i}`} className={i < star ? 'fa-solid fa-star' : 'fa-regular fa-star'}></i>
+                    ))}
+                  </span>
+                </label>
+              ))}
+              {ratingOptions.length > 4 && (
+                <button
+                  type="button"
+                  className="see-all"
+                  onClick={() => toggleSeeAll('ratings')}
+                  style={{ border: 'none', background: 'transparent', padding: 0, textAlign: 'left', cursor: 'pointer' }}
+                >
+                  {showAllSections.ratings ? 'See less' : 'See all'}
+                </button>
+              )}
             </div>
           </div>
         </aside>
@@ -309,7 +666,7 @@ export default function Listing() {
         {/* Main Content */}
         <main className="listing-main">
           <div className="listing-top-bar">
-            <div className="item-count"><span>{displayedProducts.length} items found</span></div>
+            <div className="item-count"><span>{finalFilteredProducts.length} items found</span></div>
             <div className="view-options">
               <label className="checkbox-group" style={{ marginBottom: 0 }}><input type="checkbox" /> <span>Verified only</span></label>
               <select style={{ width: '120px' }} defaultValue="Featured">
@@ -333,19 +690,47 @@ export default function Listing() {
           </div>
 
           <div className="active-filters desktop-only">
-            <div className="filter-tag">Samsung <i className="fa-solid fa-xmark"></i></div>
-            <div className="filter-tag">Apple <i className="fa-solid fa-xmark"></i></div>
-            <div className="filter-tag">Poco <i className="fa-solid fa-xmark"></i></div>
-            <div className="filter-tag">Metallic <i className="fa-solid fa-xmark"></i></div>
-            <span className="clear-filters" style={{ color: 'var(--primary-color)', cursor: 'pointer', alignSelf: 'center' }}>Clear all filter</span>
+            {[...selectedBrands, ...selectedFeatures].map((tag) => (
+              <div key={tag} className="filter-tag" onClick={() => removeSingleFilter(tag)} style={{ cursor: 'pointer' }}>
+                {tag} <i className="fa-solid fa-xmark"></i>
+              </div>
+            ))}
+            {selectedCondition !== 'Any' && (
+              <div className="filter-tag" onClick={() => setSelectedCondition('Any')} style={{ cursor: 'pointer' }}>
+                {selectedCondition} <i className="fa-solid fa-xmark"></i>
+              </div>
+            )}
+            {selectedCategory && (
+              <div className="filter-tag" onClick={() => setSelectedCategory('')} style={{ cursor: 'pointer' }}>
+                {selectedCategory} <i className="fa-solid fa-xmark"></i>
+              </div>
+            )}
+            {selectedRatings.map((star) => (
+              <div key={`rating-${star}`} className="filter-tag" onClick={() => removeSingleFilter(star)} style={{ cursor: 'pointer' }}>
+                {star} star <i className="fa-solid fa-xmark"></i>
+              </div>
+            ))}
+            {[...selectedBrands, ...selectedFeatures].length > 0 || selectedCondition !== 'Any' || selectedRatings.length > 0 || !!selectedCategory ? (
+              <span className="clear-filters" onClick={clearAllFilters} style={{ color: 'var(--primary-color)', cursor: 'pointer', alignSelf: 'center' }}>
+                Clear all filter
+              </span>
+            ) : null}
           </div>
 
           {/* Product List / Grid */}
           <div className={viewMode === 'grid' ? 'product-grid-container' : 'product-list-container'}>
-            {displayedProducts.map(product => (
+            {finalFilteredProducts.map(product => {
+              const offerPercent = getOfferPercent(product);
+              return (
               <div key={product.id} className={viewMode === 'grid' ? 'product-grid-item' : 'product-list-item'}>
                 <div className={viewMode === 'grid' ? 'product-grid-img' : 'product-list-img'}>
-                  <img src={product.image} alt="" style={viewMode === 'grid' ? { width: '150px' } : {}} />
+                  {viewMode === 'grid' ? (
+                    <a href="#" onClick={(e) => { e.preventDefault(); navigate(`/product?id=${product.id}`); }}>
+                      <img src={product.image} alt={product.title} style={{ cursor: 'pointer' }} />
+                    </a>
+                  ) : (
+                    <img src={product.image} alt={product.title} />
+                  )}
                 </div>
 
                 {viewMode === 'grid' ? (
@@ -355,6 +740,7 @@ export default function Listing() {
                         <div className="price-group">
                           <span className="price">{formatPrice(product.price)}</span>
                           {product.oldPrice && <span className="old-price">{formatPrice(product.oldPrice)}</span>}
+                          {offerPercent > 0 && <span className="offer-badge">-{offerPercent}% OFF</span>}
                         </div>
                         <div className="grid-rating-row">
                           {renderStars(product.stars)}
@@ -380,6 +766,7 @@ export default function Listing() {
                       <div className="price-row">
                         <span className="price">{formatPrice(product.price)}</span>
                         {product.oldPrice && <span className="old-price">{formatPrice(product.oldPrice)}</span>}
+                        {offerPercent > 0 && <span className="offer-badge">-{offerPercent}% OFF</span>}
                       </div>
                       <div className="rating-row">
                         {renderStars(product.stars)}
@@ -402,7 +789,7 @@ export default function Listing() {
                   </>
                 )}
               </div>
-            ))}
+            )})}
           </div>
 
           {/* Pagination */}

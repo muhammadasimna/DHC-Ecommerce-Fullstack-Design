@@ -4,7 +4,7 @@ import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 
 export default function Cart() {
-  const { cartItems, savedItems, updateQuantity, removeFromCart, saveForLater, moveToCart, clearCart, loading } = useCart();
+  const { cartItems, savedItems, updateQuantity, removeFromCart, saveForLater, moveToCart, clearCart, refreshCart, loading } = useCart();
   const { token, backendUrl } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +31,27 @@ export default function Cart() {
     } else {
       updateQuantity(itemId, newQty);
     }
+  };
+
+  const handleCheckout = async (cartItemId = null) => {
+    if (!token) return;
+    const endpoint = cartItemId ? `${backendUrl}/orders/checkout-item/${cartItemId}` : `${backendUrl}/orders/checkout`;
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.message || 'Checkout failed');
+      return;
+    }
+    alert(cartItemId ? 'Item checked out successfully!' : 'Order placed successfully!');
+    if (cartItemId) {
+      await refreshCart();
+      return;
+    }
+    await clearCart();
+    navigate('/orders');
   };
 
   const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
@@ -110,6 +131,13 @@ export default function Cart() {
                     <div className="cart-item-actions desktop-only">
                       <button className="btn btn-white" onClick={() => removeFromCart(item.id)} style={{ color: 'var(--red)', padding: '6px 12px', fontSize: '13px', fontWeight: 500, borderRadius: '6px', border: '1px solid var(--gray-300)' }}>Remove</button>
                       <button className="btn btn-white" onClick={() => saveForLater(item.id)} style={{ color: 'var(--primary-color)', padding: '6px 12px', fontSize: '13px', fontWeight: 500, borderRadius: '6px', border: '1px solid var(--gray-300)' }}>Save for later</button>
+                      <button
+                        className="btn"
+                        onClick={() => handleCheckout(item.id)}
+                        style={{ backgroundColor: '#00B517', color: 'white', border: 'none', padding: '6px 12px', fontSize: '13px', fontWeight: 500, borderRadius: '6px' }}
+                      >
+                        Checkout now
+                      </button>
                     </div>
                   </div>
                   <div className="cart-item-price-box">
@@ -171,21 +199,7 @@ export default function Cart() {
                 <span style={{ fontSize: '20px', fontWeight: 700 }}>${total.toFixed(2)}</span>
               </div>
               <button
-                onClick={async () => {
-                  if (!token) return;
-                  const res = await fetch(`${backendUrl}/orders/checkout`, {
-                    method: 'POST',
-                    headers: { Authorization: `Bearer ${token}` }
-                  });
-                  const data = await res.json().catch(() => ({}));
-                  if (!res.ok) {
-                    alert(data.message || 'Checkout failed');
-                    return;
-                  }
-                  alert('Order placed successfully!');
-                  await clearCart();
-                  navigate('/orders');
-                }}
+                onClick={() => handleCheckout()}
                 className="btn btn-green"
                 style={{ backgroundColor: '#00B517', color: 'white', width: '100%', border: 'none', padding: '15px', borderRadius: '6px', fontSize: '16px', fontWeight: 600, marginTop: '20px' }}
               >

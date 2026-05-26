@@ -21,12 +21,20 @@ namespace Backend.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Product>>> GetProducts([FromQuery] string? category)
         {
-            var query = _context.Products.AsQueryable().Where(p => p.UserId == null);
+            var currentUserId = GetCurrentUserId();
+            var query = _context.Products.AsQueryable();
+
+            // If a user is logged in, hide their own products from public listing.
+            if (currentUserId != null)
+            {
+                query = query.Where(p => p.UserId != currentUserId);
+            }
+
             if (!string.IsNullOrEmpty(category))
             {
                 query = query.Where(p => p.Category.ToLower() == category.ToLower());
             }
-            return await query.ToListAsync();
+            return await query.OrderByDescending(p => p.Id).ToListAsync();
         }
 
         [HttpGet("mine")]

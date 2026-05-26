@@ -9,13 +9,16 @@ export function CartProvider({ children }) {
   const [savedItems, setSavedItems] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  const fetchCart = async () => {
+  const fetchCart = async (showLoader = false) => {
     if (!token) {
       setCartItems([]);
       setSavedItems([]);
+      setLoading(false);
       return;
     }
-    setLoading(true);
+    if (showLoader) {
+      setLoading(true);
+    }
     try {
       // Fetch active cart items
       const cartRes = await fetch(`${backendUrl}/cart`, {
@@ -37,12 +40,14 @@ export function CartProvider({ children }) {
     } catch (err) {
       console.error('Failed to fetch cart', err);
     } finally {
-      setLoading(false);
+      if (showLoader) {
+        setLoading(false);
+      }
     }
   };
 
   useEffect(() => {
-    fetchCart();
+    fetchCart(true);
   }, [token, backendUrl]);
 
   const addToCart = async (productId, quantity = 1, size = 'medium', color = 'blue') => {
@@ -62,7 +67,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to add item to cart');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
       throw err;
@@ -84,7 +89,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to update quantity');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
     }
@@ -101,7 +106,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to remove item');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
     }
@@ -118,7 +123,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to save item');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
     }
@@ -135,7 +140,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to move item to cart');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
     }
@@ -152,7 +157,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to clear cart');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
     }
@@ -175,7 +180,7 @@ export function CartProvider({ children }) {
         const data = await res.json();
         throw new Error(data.message || 'Failed to save product');
       }
-      await fetchCart();
+      await fetchCart(false);
     } catch (err) {
       console.error(err);
       throw err;

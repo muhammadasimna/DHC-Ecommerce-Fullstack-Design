@@ -130,16 +130,20 @@ export function Header() {
                   onClick={() => setIsUserMenuOpen((prev) => !prev)}
                   style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
                 >
-                  <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
+                  {/* <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
                     {String(user.username || 'M').charAt(0).toUpperCase()}
                   </div>
-                  <span>Profile</span>
+                  <span>Profile</span> */}
+                  <Link className="action-item action-profile" title={String(user.username).trim()}>
+                    <i className="fa-solid fa-user"></i>
+                    <span>{String(user.username).trim().split(/\s+/)[0]}</span>
+                  </Link>
                 </button>
 
                 {isUserMenuOpen && (
                   <div style={{ position: 'absolute', top: '46px', right: 0, minWidth: '150px', background: 'var(--white)', border: '1px solid var(--gray-300)', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', zIndex: 2000, overflow: 'hidden' }}>
                     <Link to="/my-products" onClick={() => setIsUserMenuOpen(false)} style={{ display: 'block', padding: '10px 12px', fontSize: '14px', color: 'var(--dark-color)' }}>
-                      <i className="fa-regular fa-user" style={{ marginRight: '8px' }}></i>
+                      <i className="fa-solid fa-user" style={{ marginRight: '8px' }}></i>
                       Profile
                     </Link>
                     <button
@@ -155,16 +159,16 @@ export function Header() {
               </div>
             ) : (
               <Link to="/login" className="action-item action-profile">
-                <i className="fa-regular fa-user"></i>
-                <span>Profile</span>
+                  <i className="fa-solid fa-user"></i>
+                  <span>Sign in</span>
               </Link>
             )}
             <Link to="#" className="action-item action-message desktop-only">
-              <i className="fa-regular fa-message"></i>
+              <i className="fa-solid fa-message"></i>
               <span>Message</span>
             </Link>
             <Link to="/orders" className="action-item action-orders desktop-only">
-              <i className="fa-regular fa-heart"></i>
+              <i className="fa-solid fa-heart"></i>
               <span>Orders</span>
             </Link>
             <Link to="/cart" className="action-item action-cart" style={{ position: 'relative' }}>

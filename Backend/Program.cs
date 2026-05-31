@@ -14,6 +14,12 @@ builder.Services.AddControllers();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=ecommerce.db"));
 
+
+// Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+
 // Configure JWT Authentication
 var secretKey = builder.Configuration["Jwt:Key"] ?? "super_secret_key_12345678901234567890";
 var key = Encoding.ASCII.GetBytes(secretKey);
@@ -112,6 +118,8 @@ CREATE TABLE IF NOT EXISTS OrderItems (
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 if (!app.Environment.IsDevelopment())

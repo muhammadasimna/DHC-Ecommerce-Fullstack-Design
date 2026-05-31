@@ -782,7 +782,7 @@ footer {
 
 .filter-group {
     border-top: 1px solid var(--gray-300);
-    padding: 20px 0;
+    padding: 10px 0;
 }
 
 .filter-group:first-child {
@@ -879,7 +879,7 @@ footer {
 .price-range-visual {
     position: relative;
     height: 18px;
-    margin-bottom: 10px;
+    margin: 7px;
 }
 
 .price-range-visual .range-track {
@@ -1898,12 +1898,88 @@ body.cart-page .nav-bottom {
 .payment-methods {
     display: flex;
     justify-content: center;
-    gap: 10px;
-    margin-top: 20px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    flex-wrap: nowrap;
 }
 
-.payment-methods img {
-    height: 15px;
+.payment-badge {
+    width: 34px;
+    height: 22px;
+    border: 1px solid #E3E8EE;
+    border-radius: 4px;
+    background: var(--white);
+    box-shadow: 0 1px 2px rgba(28, 28, 28, 0.04);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+}
+
+.payment-amex {
+    flex-direction: column;
+    gap: 0;
+    font-size: 4px;
+    line-height: 1;
+    color: #1976D2;
+    font-weight: 700;
+}
+
+.payment-amex strong {
+    font-size: 5px;
+    line-height: 1;
+}
+
+.payment-mastercard {
+    position: relative;
+}
+
+.mc-circle {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    display: block;
+}
+
+.mc-red {
+    background: #EB001B;
+    margin-right: -4px;
+}
+
+.mc-yellow {
+    background: #F79E1B;
+    opacity: 0.92;
+}
+
+.payment-paypal strong {
+    color: #123D8F;
+    font-size: 16px;
+    line-height: 1;
+    font-style: italic;
+}
+
+.payment-visa strong {
+    color: #1434CB;
+    font-size: 9px;
+    line-height: 1;
+    letter-spacing: 0;
+}
+
+.payment-apple-pay {
+    gap: 2px;
+    color: #111;
+    font-size: 9px;
+    font-weight: 700;
+}
+
+.payment-apple-pay i {
+    font-size: 11px;
+    line-height: 1;
+}
+
+.payment-apple-pay strong {
+    line-height: 1;
 }
 
 .service-features {

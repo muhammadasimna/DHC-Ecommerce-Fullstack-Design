@@ -72,7 +72,7 @@ export default function Cart() {
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh', flexDirection: 'column' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', position: 'fixed', top: 0, left: 0, flexDirection: 'column', backgroundColor: 'var(--white)', zIndex: 9999 }}>
         <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: '40px', color: 'var(--primary-color)', marginBottom: '15px' }}></i>
         <p style={{ color: 'var(--secondary-color)' }}>Loading your shopping cart...</p>
       </div>
@@ -203,13 +203,27 @@ export default function Cart() {
                 className="btn btn-green"
                 style={{ backgroundColor: '#00B517', color: 'white', width: '100%', border: 'none', padding: '15px', borderRadius: '6px', fontSize: '16px', fontWeight: 600, marginTop: '20px' }}
               >
-                Checkout ({cartItems.length} items)
+                Checkout
               </button>
-              <div className="payment-methods" style={{ display: 'flex', gap: '10px', justifyContent: 'center', marginTop: '20px' }}>
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/1280px-Mastercard-logo.svg.png" alt="Mastercard" style={{ height: '14px' }} />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/1200px-PayPal.svg.png" alt="Paypal" style={{ height: '14px' }} />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png" alt="Visa" style={{ height: '14px' }} />
-                <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Apple_Pay_logo.svg/1280px-Apple_Pay_logo.svg.png" alt="Apple Pay" style={{ height: '14px' }} />
+              <div className="payment-methods" aria-label="Accepted payment methods">
+                <span className="payment-badge payment-amex" title="American Express">
+                  <span>AMERICAN</span>
+                  <strong>EXPRESS</strong>
+                </span>
+                <span className="payment-badge payment-mastercard" title="Mastercard">
+                  <span className="mc-circle mc-red"></span>
+                  <span className="mc-circle mc-yellow"></span>
+                </span>
+                <span className="payment-badge payment-paypal" title="PayPal">
+                  <strong>P</strong>
+                </span>
+                <span className="payment-badge payment-visa" title="Visa">
+                  <strong>VISA</strong>
+                </span>
+                <span className="payment-badge payment-apple-pay" title="Apple Pay">
+                  <i className="fa-brands fa-apple"></i>
+                  <strong>Pay</strong>
+                </span>
               </div>
             </div>
           </aside>

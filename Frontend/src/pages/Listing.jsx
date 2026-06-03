@@ -5,6 +5,8 @@ import { useCart } from '../context/CartContext';
 
 export default function Listing() {
   const [viewMode, setViewMode] = useState('grid');
+  const [sortMode, setSortMode] = useState('newest');
+  const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
   const { backendUrl, token, user } = useAuth();
   const { addToCart, saveProductDirectly, savedItems = [], removeFromCart } = useCart();
   const navigate = useNavigate();
@@ -212,7 +214,15 @@ export default function Listing() {
     return price;
   };
 
-  const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
+  const queryParams = new URLSearchParams(location.search);
+  const query = queryParams.get('q')?.toLowerCase().trim() || '';
+  const categoryFromUrl = queryParams.get('category')?.trim() || '';
+  const offersOnly = queryParams.get('offers') === '1';
+
+  useEffect(() => {
+    setSelectedCategory(categoryFromUrl);
+  }, [categoryFromUrl]);
+
   const visibleProducts = products.filter((product) => {
     const ownerId = Number(product.userId ?? product.UserId ?? 0);
     const currentUserId = Number(user?.id ?? 0);
@@ -277,7 +287,11 @@ export default function Listing() {
     hasSyncedInitialFilters.current = true;
   }, [visibleProducts, selectedBrands, selectedFeatures]);
 
-  const priceFilteredProducts = displayedProducts.filter((product) => {
+  const offerFilteredProducts = offersOnly
+    ? displayedProducts.filter((product) => Number(product.oldPrice || 0) > Number(product.price || 0))
+    : displayedProducts;
+
+  const priceFilteredProducts = offerFilteredProducts.filter((product) => {
     const p = Number(product.price || 0);
     return p >= appliedMinPrice && p <= appliedMaxPrice;
   });
@@ -314,6 +328,26 @@ export default function Listing() {
     return matchesCategory && matchesBrand && matchesFeature && matchesCondition && matchesRatings;
   });
 
+  const sortedFilteredProducts = [...finalFilteredProducts].sort((a, b) => {
+    if (sortMode === 'price-low') return Number(a.price || 0) - Number(b.price || 0);
+    if (sortMode === 'price-high') return Number(b.price || 0) - Number(a.price || 0);
+    if (sortMode === 'rating') return Number(b.rating || 0) - Number(a.rating || 0);
+    return Number(b.id || 0) - Number(a.id || 0);
+  });
+
+  const sortLabels = {
+    newest: 'Newest',
+    'price-low': 'Price low',
+    'price-high': 'Price high',
+    rating: 'Rating'
+  };
+
+  const cycleSortMode = () => {
+    const order = ['newest', 'price-low', 'price-high', 'rating'];
+    const currentIndex = order.indexOf(sortMode);
+    setSortMode(order[(currentIndex + 1) % order.length]);
+  };
+
   const sliderMax = Math.max(
     1000,
     ...visibleProducts.map((p) => Number(p.price || 0)),
@@ -347,6 +381,18 @@ export default function Listing() {
     setState((prev) => (prev.includes(value) ? prev.filter((x) => x !== value) : [...prev, value]));
   };
 
+  const updateCategoryFilter = (category) => {
+    setSelectedCategory(category);
+    const params = new URLSearchParams(location.search);
+    if (category) {
+      params.set('category', category);
+    } else {
+      params.delete('category');
+    }
+    const qs = params.toString();
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+  };
+
   const removeSingleFilter = (value) => {
     setSelectedBrands((prev) => prev.filter((x) => x !== value));
     setSelectedFeatures((prev) => prev.filter((x) => x !== value));
@@ -354,6 +400,11 @@ export default function Listing() {
   };
 
   const clearAllFilters = () => {
+    const params = new URLSearchParams(location.search);
+    params.delete('category');
+    params.delete('offers');
+    const qs = params.toString();
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
     setSelectedCategory('');
     setSelectedBrands([]);
     setSelectedFeatures([]);
@@ -368,6 +419,31 @@ export default function Listing() {
     setShowAllSections((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
+  const activeFilterTags = [
+    ...(offersOnly ? [{ type: 'offers', label: 'Hot offers', remove: () => {
+      const params = new URLSearchParams(location.search);
+      params.delete('offers');
+      const qs = params.toString();
+      navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+    } }] : []),
+    ...(selectedCategory ? [{ type: 'category', label: selectedCategory, remove: () => updateCategoryFilter('') }] : []),
+    ...selectedBrands.map((brand) => ({ type: 'brand', label: brand, remove: () => removeSingleFilter(brand) })),
+    ...selectedFeatures.map((feature) => ({ type: 'feature', label: feature, remove: () => removeSingleFilter(feature) })),
+    ...(selectedCondition !== 'Any' ? [{ type: 'condition', label: selectedCondition, remove: () => setSelectedCondition('Any') }] : []),
+    ...selectedRatings.map((star) => ({ type: 'rating', label: `${star} star`, remove: () => removeSingleFilter(star) }))
+  ];
+
+  const mobileCategoryPills = uniqueSorted([
+    'All',
+    ...categoryOptions,
+    'Phones',
+    'Tablets',
+    'Tech'
+  ]).filter((cat) => cat === 'All' || visibleProducts.some((product) => {
+    const haystack = `${product.title || ''} ${product.category || ''} ${product.description || product.desc || ''}`.toLowerCase();
+    return haystack.includes(cat.toLowerCase());
+  })).slice(0, 8);
+
   return (
     <div className="container listing-page-container">
       {/* Mobile Header */}
@@ -377,22 +453,43 @@ export default function Listing() {
           <h3>Mobile accessory</h3>
           <div className="mobile-header-actions">
             <Link to="/cart"><i className="fa-solid fa-cart-shopping"></i></Link>
-            <Link to="#"><i className="fa-regular fa-user"></i></Link>
+            <Link to={user ? '/profile' : '/login'} aria-label={user ? 'Open profile' : 'Sign in'}>
+              <i className="fa-regular fa-user"></i>
+            </Link>
           </div>
         </div>
 
         <div className="mobile-search-box">
           <i className="fa-solid fa-magnifying-glass search-icon"></i>
-          <input type="text" placeholder="Search" />
+          <input
+            type="text"
+            placeholder="Search"
+            value={new URLSearchParams(location.search).get('q') || ''}
+            onChange={(e) => {
+              const params = new URLSearchParams(location.search);
+              const value = e.target.value;
+              if (value.trim()) {
+                params.set('q', value);
+              } else {
+                params.delete('q');
+              }
+              const qs = params.toString();
+              navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+            }}
+          />
         </div>
 
         <div className="mobile-category-pills">
-          <div className="pill active">Tablets</div>
-          <div className="pill">Phones</div>
-          <div className="pill">Ipads</div>
-          <div className="pill">Ipod</div>
-          <div className="pill">Jackets</div>
-          <div className="pill">Tech</div>
+          {mobileCategoryPills.map((cat) => (
+            <button
+              key={cat}
+              type="button"
+              className={`pill ${(cat === 'All' && !selectedCategory) || selectedCategory === cat ? 'active' : ''}`}
+              onClick={() => updateCategoryFilter(cat === 'All' ? '' : cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -416,11 +513,11 @@ export default function Listing() {
 
       <div className="mobile-only">
         <div className="mobile-sort-filter-bar">
-          <button className="mobile-bar-btn">
-            Sort: Newest <i className="fa-solid fa-arrow-down-wide-short" style={{ marginLeft: '5px' }}></i>
+          <button type="button" className="mobile-bar-btn" onClick={cycleSortMode}>
+            Sort: {sortLabels[sortMode]} <i className="fa-solid fa-arrow-down-wide-short" style={{ marginLeft: '5px' }}></i>
           </button>
-          <button className="mobile-bar-btn">
-            Filter (3) <i className="fa-solid fa-filter" style={{ marginLeft: '5px' }}></i>
+          <button type="button" className="mobile-bar-btn" onClick={() => setIsMobileFiltersOpen(true)}>
+            Filter ({activeFilterTags.length}) <i className="fa-solid fa-filter" style={{ marginLeft: '5px' }}></i>
           </button>
           <div className="mobile-view-toggle">
             <button
@@ -440,9 +537,16 @@ export default function Listing() {
 
       <div className="mobile-only">
         <div className="mobile-active-tags">
-          <div className="active-tag-pill">Huawei <i className="fa-solid fa-xmark"></i></div>
-          <div className="active-tag-pill">Apple <i className="fa-solid fa-xmark"></i></div>
-          <div className="active-tag-pill">64GB <i className="fa-solid fa-xmark"></i></div>
+          {activeFilterTags.map((tag) => (
+            <button key={`${tag.type}-${tag.label}`} type="button" className="active-tag-pill" onClick={tag.remove}>
+              {tag.label} <i className="fa-solid fa-xmark"></i>
+            </button>
+          ))}
+          {activeFilterTags.length > 0 && (
+            <button type="button" className="active-tag-pill clear-mobile-filter" onClick={clearAllFilters}>
+              Clear all
+            </button>
+          )}
         </div>
       </div>
 
@@ -458,7 +562,14 @@ export default function Listing() {
 
       <div className="listing-container">
         {/* Sidebar */}
-        <aside className="sidebar">
+        {isMobileFiltersOpen && <div className="mobile-filter-backdrop mobile-only" onClick={() => setIsMobileFiltersOpen(false)}></div>}
+        <aside className={`sidebar ${isMobileFiltersOpen ? 'mobile-filter-open' : ''}`}>
+          <div className="mobile-filter-head mobile-only">
+            <h3>Filters</h3>
+            <button type="button" onClick={() => setIsMobileFiltersOpen(false)}>
+              <i className="fa-solid fa-xmark"></i>
+            </button>
+          </div>
           <div className="filter-group">
             <div className="filter-header" onClick={() => toggleSection('category')}>
               <h4>Category</h4><i className={`fa-solid ${openSections.category ? 'fa-chevron-up' : 'fa-chevron-down'}`}></i>
@@ -469,7 +580,7 @@ export default function Listing() {
                   <li key={cat}>
                     <button
                       type="button"
-                      onClick={() => setSelectedCategory(cat)}
+                      onClick={() => updateCategoryFilter(cat)}
                       style={{
                         border: 'none',
                         background: 'transparent',
@@ -661,16 +772,23 @@ export default function Listing() {
               )}
             </div>
           </div>
+          <div className="mobile-filter-actions mobile-only">
+            <button type="button" className="btn btn-white" onClick={clearAllFilters}>Clear all</button>
+            <button type="button" className="btn btn-primary" onClick={() => setIsMobileFiltersOpen(false)}>Apply filters</button>
+          </div>
         </aside>
 
         {/* Main Content */}
         <main className="listing-main">
           <div className="listing-top-bar">
-            <div className="item-count"><span>{finalFilteredProducts.length} items found</span></div>
+            <div className="item-count"><span>{sortedFilteredProducts.length} items found</span></div>
             <div className="view-options">
               <label className="checkbox-group" style={{ marginBottom: 0 }}><input type="checkbox" /> <span>Verified only</span></label>
-              <select style={{ width: '120px' }} defaultValue="Featured">
-                <option value="Featured">Featured</option>
+              <select style={{ width: '120px' }} value={sortMode} onChange={(e) => setSortMode(e.target.value)}>
+                <option value="newest">Featured</option>
+                <option value="price-low">Price low</option>
+                <option value="price-high">Price high</option>
+                <option value="rating">Rating</option>
               </select>
               <div className="view-toggle">
                 <button
@@ -701,7 +819,7 @@ export default function Listing() {
               </div>
             )}
             {selectedCategory && (
-              <div className="filter-tag" onClick={() => setSelectedCategory('')} style={{ cursor: 'pointer' }}>
+              <div className="filter-tag" onClick={() => updateCategoryFilter('')} style={{ cursor: 'pointer' }}>
                 {selectedCategory} <i className="fa-solid fa-xmark"></i>
               </div>
             )}
@@ -719,7 +837,7 @@ export default function Listing() {
 
           {/* Product List / Grid */}
           <div className={viewMode === 'grid' ? 'product-grid-container' : 'product-list-container'}>
-            {finalFilteredProducts.map(product => {
+            {sortedFilteredProducts.map(product => {
               const offerPercent = getOfferPercent(product);
               return (
               <div key={product.id} className={viewMode === 'grid' ? 'product-grid-item' : 'product-list-item'}>

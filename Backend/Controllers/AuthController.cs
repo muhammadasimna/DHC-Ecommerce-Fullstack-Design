@@ -75,35 +75,70 @@ namespace Backend.Controllers
         [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
-            var authHeader = Request.Headers["Authorization"].ToString();
-            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
-            {
-                return Unauthorized(new { message = "Not authenticated" });
-            }
-
-            var tokenString = authHeader.Substring(7);
-            var tokenHandler = new JwtSecurityTokenHandler();
             try
             {
-                var secretKey = _configuration["Jwt:Key"] ?? "super_secret_key_12345678901234567890";
-                var key = Encoding.ASCII.GetBytes(secretKey);
+                var user = await GetUserFromBearerToken();
 
-                tokenHandler.ValidateToken(tokenString, new TokenValidationParameters
+                return Ok(new { user = new { user.Id, user.Username, user.Email, user.Location, user.IsVerified, user.ShippingPolicy } });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch
+            {
+                return Unauthorized(new { message = "Invalid token" });
+            }
+        }
+
+        [HttpGet("user/{id}")]
+        public async Task<IActionResult> GetUserDetails(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                return NotFound(new { message = "User not found" });
+            }
+            return Ok(new { user = new { user.Id, user.Username, user.Email, user.Location, user.IsVerified, user.ShippingPolicy } });
+        }
+
+        [HttpPut("profile")]
+        public async Task<IActionResult> UpdateProfile([FromBody] UpdateProfileDto dto)
+        {
+            try
+            {
+                var user = await GetUserFromBearerToken();
+                var username = dto.Username.Trim();
+                var email = dto.Email.Trim();
+
+                if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(email))
                 {
-                    ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(key),
-                    ValidateIssuer = false,
-                    ValidateAudience = false,
-                    ClockSkew = TimeSpan.Zero
-                }, out SecurityToken validatedToken);
+                    return BadRequest(new { message = "Username and email are required" });
+                }
 
-                var jwtToken = (JwtSecurityToken)validatedToken;
-                var userId = int.Parse(jwtToken.Claims.First(x => x.Type == "id").Value);
+                var usernameExists = await _context.Users.AnyAsync(u => u.Id != user.Id && u.Username == username);
+                if (usernameExists)
+                {
+                    return BadRequest(new { message = "Username already exists" });
+                }
 
-                var user = await _context.Users.FindAsync(userId);
-                if (user == null) return NotFound(new { message = "User not found" });
+                var emailExists = await _context.Users.AnyAsync(u => u.Id != user.Id && u.Email == email);
+                if (emailExists)
+                {
+                    return BadRequest(new { message = "Email already registered" });
+                }
 
-                return Ok(new { user = new { user.Id, user.Username, user.Email } });
+                user.Username = username;
+                user.Email = email;
+                user.Location = (dto.Location ?? user.Location ?? "Global").Trim();
+                user.ShippingPolicy = (dto.ShippingPolicy ?? user.ShippingPolicy ?? "Worldwide shipping").Trim();
+                await _context.SaveChangesAsync();
+
+                return Ok(new { user = new { user.Id, user.Username, user.Email, user.Location, user.IsVerified, user.ShippingPolicy } });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
             }
             catch
             {
@@ -142,6 +177,44 @@ namespace Backend.Controllers
         {
             return HashPassword(password) == hashedPassword;
         }
+
+        private async Task<User> GetUserFromBearerToken()
+        {
+            var authHeader = Request.Headers["Authorization"].ToString();
+            if (string.IsNullOrEmpty(authHeader) || !authHeader.StartsWith("Bearer "))
+            {
+                throw new UnauthorizedAccessException("Not authenticated");
+            }
+
+            var tokenString = authHeader.Substring(7);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var secretKey = _configuration["Jwt:Key"] ?? "super_secret_key_12345678901234567890";
+            var key = Encoding.ASCII.GetBytes(secretKey);
+
+            tokenHandler.ValidateToken(tokenString, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out SecurityToken validatedToken);
+
+            var jwtToken = (JwtSecurityToken)validatedToken;
+            var idClaim = jwtToken.Claims.FirstOrDefault(x => x.Type == "id")?.Value;
+            if (!int.TryParse(idClaim, out var userId))
+            {
+                throw new UnauthorizedAccessException("Invalid token");
+            }
+
+            var user = await _context.Users.FindAsync(userId);
+            if (user == null)
+            {
+                throw new UnauthorizedAccessException("User not found");
+            }
+
+            return user;
+        }
     }
 
     public class RegisterDto
@@ -155,5 +228,13 @@ namespace Backend.Controllers
     {
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
+    }
+
+    public class UpdateProfileDto
+    {
+        public string Username { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Location { get; set; }
+        public string? ShippingPolicy { get; set; }
     }
 }

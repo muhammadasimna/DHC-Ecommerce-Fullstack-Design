@@ -6,8 +6,11 @@ import { useCart } from '../context/CartContext';
 export function Header() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [searchCategory, setSearchCategory] = useState('All category');
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const [isLanguageOpen, setIsLanguageOpen] = useState(false);
+  const [navCategories, setNavCategories] = useState([]);
+  const { user, logout, backendUrl } = useAuth();
   const { cartItems } = useCart();
   const navigate = useNavigate();
   const location = useLocation();
@@ -16,6 +19,7 @@ export function Header() {
   React.useEffect(() => {
     const params = new URLSearchParams(location.search);
     setSearchTerm(params.get('q') || '');
+    setSearchCategory(params.get('category') || 'All category');
   }, [location.search]);
 
   React.useEffect(() => {
@@ -28,6 +32,27 @@ export function Header() {
     return () => document.removeEventListener('mousedown', handleOutsideClick);
   }, []);
 
+  React.useEffect(() => {
+    const fetchNavCategories = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/products`);
+        if (!res.ok) return;
+        const products = await res.json();
+        if (!Array.isArray(products)) return;
+        const categories = [...new Set(
+          products
+            .map((product) => String(product.category || '').trim())
+            .filter(Boolean)
+        )].sort((a, b) => a.localeCompare(b));
+        setNavCategories(categories);
+      } catch {
+        setNavCategories([]);
+      }
+    };
+
+    fetchNavCategories();
+  }, [backendUrl]);
+
   const handleLogout = () => {
     logout();
     navigate('/');
@@ -36,18 +61,36 @@ export function Header() {
   };
 
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const navCategoryItems = navCategories.slice(0, 8);
 
-  const handleSearch = (e) => {
-    e.preventDefault();
+  const applySearchToCurrentPage = (value, options = {}) => {
     const params = new URLSearchParams(location.search);
-    const value = searchTerm.trim();
-    if (value) {
+    if (value.trim()) {
       params.set('q', value);
     } else {
       params.delete('q');
     }
+    if (searchCategory && searchCategory !== 'All category') {
+      params.set('category', searchCategory);
+    } else {
+      params.delete('category');
+    }
     const qs = params.toString();
-    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`);
+    navigate(`${location.pathname}${qs ? `?${qs}` : ''}`, options);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    applySearchToCurrentPage(searchTerm.trim());
+  };
+
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      applySearchToCurrentPage(value, { replace: true });
+    }
   };
 
   return (
@@ -81,20 +124,31 @@ export function Header() {
             <li><Link to="/listing" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-list"></i> Categories</Link></li>
             {user && <li><Link to="/my-products" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-box"></i> My Products</Link></li>}
             <li><Link to="/cart" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-cart-shopping"></i> My Cart {cartCount > 0 && `(${cartCount})`}</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-regular fa-heart"></i> Favorites</Link></li>
+            <li><Link to="/favorites" onClick={() => setIsSidebarOpen(false)}><i className="fa-regular fa-heart"></i> Favorites</Link></li>
             <li><Link to="/orders" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-box"></i> My orders</Link></li>
           </ul>
           <hr className="sidebar-divider" />
           <ul className="sidebar-menu">
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-globe"></i> English | USD</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-headset"></i> Contact us</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}><i className="fa-regular fa-building"></i> About</Link></li>
+            <li>
+              <button type="button" className="sidebar-link-button" onClick={() => setIsLanguageOpen((prev) => !prev)}>
+                <i className="fa-solid fa-globe"></i> English | USD
+                <i className={`fa-solid ${isLanguageOpen ? 'fa-chevron-up' : 'fa-chevron-down'} sidebar-link-chevron`}></i>
+              </button>
+              {isLanguageOpen && (
+                <div className="sidebar-language-panel">
+                  <button type="button">English</button>
+                  <button type="button">USD</button>
+                </div>
+              )}
+            </li>
+            <li><Link to="/?contact=1" onClick={() => setIsSidebarOpen(false)}><i className="fa-solid fa-headset"></i> Contact us</Link></li>
+            <li><Link to="/info/about" onClick={() => setIsSidebarOpen(false)}><i className="fa-regular fa-building"></i> About</Link></li>
           </ul>
           <hr className="sidebar-divider" />
           <ul className="sidebar-footer-menu">
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}>User agreement</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}>Partnership</Link></li>
-            <li><Link to="#" onClick={() => setIsSidebarOpen(false)}>Privacy policy</Link></li>
+            <li><Link to="/info/agreement" onClick={() => setIsSidebarOpen(false)}>User agreement</Link></li>
+            <li><Link to="/info/partnership" onClick={() => setIsSidebarOpen(false)}>Partnership</Link></li>
+            <li><Link to="/info/privacy" onClick={() => setIsSidebarOpen(false)}>Privacy policy</Link></li>
           </ul>
         </div>
       </div>
@@ -114,10 +168,16 @@ export function Header() {
               type="text"
               placeholder="Search"
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchInputChange}
             />
-            <select defaultValue="All category">
+            <select value={searchCategory} onChange={(e) => setSearchCategory(e.target.value)}>
               <option value="All category">All category</option>
+              <option value="Mobile accessory">Mobile accessory</option>
+              <option value="Electronics">Electronics</option>
+              <option value="Smartphones">Smartphones</option>
+              <option value="Modern tech">Modern tech</option>
+              <option value="Home and outdoor">Home and outdoor</option>
+              <option value="Clothes and wear">Clothes and wear</option>
             </select>
             <button type="submit" className="btn btn-primary">Search</button>
           </form>
@@ -129,29 +189,24 @@ export function Header() {
                   className="action-item action-profile"
                   onClick={() => setIsUserMenuOpen((prev) => !prev)}
                   style={{ cursor: 'pointer', border: 'none', background: 'transparent' }}
+                  title={String(user.username).trim()}
                 >
-                  {/* <div style={{ width: '26px', height: '26px', borderRadius: '50%', background: 'var(--primary-light)', color: 'var(--primary-color)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700 }}>
-                    {String(user.username || 'M').charAt(0).toUpperCase()}
-                  </div>
-                  <span>Profile</span> */}
-                  <Link className="action-item action-profile" title={String(user.username).trim()}>
-                    <i className="fa-solid fa-user"></i>
-                    <span>{String(user.username).trim().split(/\s+/)[0]}</span>
-                  </Link>
+                  <i className="fa-solid fa-user"></i>
+                  <span>{String(user.username).trim().split(/\s+/)[0]}</span>
                 </button>
 
                 {isUserMenuOpen && (
-                  <div style={{ position: 'absolute', top: '46px', right: 0, minWidth: '150px', background: 'var(--white)', border: '1px solid var(--gray-300)', borderRadius: '8px', boxShadow: '0 8px 20px rgba(0,0,0,0.08)', zIndex: 2000, overflow: 'hidden' }}>
-                    <Link to="/my-products" onClick={() => setIsUserMenuOpen(false)} style={{ display: 'block', padding: '10px 12px', fontSize: '14px', color: 'var(--dark-color)' }}>
-                      <i className="fa-solid fa-user" style={{ marginRight: '8px' }}></i>
+                  <div className="profile-menu">
+                    <Link to="/profile" onClick={() => setIsUserMenuOpen(false)} className="profile-menu-item">
+                      <i className="fa-solid fa-user"></i>
                       Profile
                     </Link>
                     <button
                       type="button"
                       onClick={handleLogout}
-                      style={{ width: '100%', textAlign: 'left', border: 'none', background: 'transparent', padding: '10px 12px', fontSize: '14px', color: 'var(--red)', cursor: 'pointer' }}
+                      className="profile-menu-item danger"
                     >
-                      <i className="fa-solid fa-right-from-bracket" style={{ marginRight: '8px' }}></i>
+                      <i className="fa-solid fa-right-from-bracket"></i>
                       Sign out
                     </button>
                   </div>
@@ -201,17 +256,53 @@ export function Header() {
       <nav className="nav-bottom">
         <div className="container">
           <div className="nav-left">
-            <div className="category-toggle">
-              <i className="fa-solid fa-bars"></i>
-              <span>All category</span>
+            <div className="nav-item nav-dropdown">
+              <Link to="/listing" className="category-toggle">
+                <i className="fa-solid fa-bars"></i>
+                <span>All category</span>
+              </Link>
+              <div className="nav-menu nav-category-menu">
+                {navCategoryItems.length > 0 ? (
+                  navCategoryItems.map((category) => (
+                    <Link key={category} to={`/listing?category=${encodeURIComponent(category)}`}>
+                      {category}
+                    </Link>
+                  ))
+                ) : (
+                  <Link to="/my-products">Add products to create categories</Link>
+                )}
+                <Link to="/listing" className="nav-menu-strong">View all products</Link>
+              </div>
             </div>
             <ul className="nav-links">
-              <li><Link to="/listing">Hot offers</Link></li>
+              <li><Link to="/listing?offers=1">Hot offers</Link></li>
               {user && <li><Link to="/my-products">My Products</Link></li>}
-              <li><Link to="/product">Gift boxes</Link></li>
-              <li><Link to="#">Projects</Link></li>
-              <li><Link to="#">Menu item</Link></li>
-              <li><Link to="#">Help</Link> <i className="fa-solid fa-chevron-down" style={{ fontSize: '10px' }}></i></li>
+              <li><Link to="/listing?q=gift">Gift boxes</Link></li>
+              <li><Link to="/listing?q=project">Projects</Link></li>
+              <li className="nav-item nav-dropdown">
+                <Link to="/listing">Menu item</Link>
+                <div className="nav-menu">
+                  {navCategoryItems.length > 0 ? (
+                    navCategoryItems.slice(0, 6).map((category) => (
+                      <Link key={category} to={`/listing?category=${encodeURIComponent(category)}`}>
+                        {category}
+                      </Link>
+                    ))
+                  ) : (
+                    <Link to="/my-products">No categories yet</Link>
+                  )}
+                  <Link to="/listing?offers=1" className="nav-menu-strong">Hot offers</Link>
+                </div>
+              </li>
+              <li className="nav-item nav-dropdown">
+                <Link to={user ? '/profile' : '/login'}>Help <i className="fa-solid fa-chevron-down"></i></Link>
+                <div className="nav-menu nav-help-menu">
+                  <Link to={user ? '/profile' : '/login'}><i className="fa-solid fa-user"></i> Account center</Link>
+                  <Link to="/orders"><i className="fa-solid fa-box"></i> My orders</Link>
+                  <Link to="/cart"><i className="fa-solid fa-cart-shopping"></i> Cart support</Link>
+                  <Link to="/my-products"><i className="fa-solid fa-store"></i> Seller tools</Link>
+                </div>
+              </li>
             </ul>
           </div>
           <div className="nav-right">

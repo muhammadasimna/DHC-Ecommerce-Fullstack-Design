@@ -30,10 +30,13 @@ export default function ProductDetail() {
     additionalImagesJson: '[]'
   });
 
+  const [seller, setSeller] = useState(null);
+  const [relatedProducts, setRelatedProducts] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     document.body.classList.add('product-detail-page');
+    window.scrollTo(0, 0);
     
     const fetchProduct = async () => {
       try {
@@ -41,6 +44,22 @@ export default function ProductDetail() {
         if (res.ok) {
           const data = await res.json();
           setProduct(data);
+          
+          const sellerId = data.userId || data.UserId || 1;
+          const sellerRes = await fetch(`${backendUrl}/auth/user/${sellerId}`);
+          if (sellerRes.ok) {
+            const sellerData = await sellerRes.json();
+            setSeller(sellerData.user);
+          }
+
+          if (data.category) {
+            const relatedRes = await fetch(`${backendUrl}/products?category=${encodeURIComponent(data.category)}`);
+            if (relatedRes.ok) {
+              const relatedData = await relatedRes.json();
+              const filtered = relatedData.filter(p => p.id !== data.id).slice(0, 6);
+              setRelatedProducts(filtered);
+            }
+          }
         }
       } catch (err) {
         console.warn('Backend not running or product not found. Using local mock product.', err);
@@ -132,7 +151,9 @@ export default function ProductDetail() {
         <Link to="/"><i className="fa-solid fa-arrow-left"></i></Link>
         <div className="mobile-header-actions">
           <Link to="/cart"><i className="fa-solid fa-cart-shopping"></i></Link>
-          <Link to="#"><i className="fa-regular fa-user"></i></Link>
+          <Link to={user ? '/profile' : '/login'} aria-label={user ? 'Open profile' : 'Sign in'}>
+            <i className="fa-regular fa-user"></i>
+          </Link>
         </div>
       </div>
 
@@ -252,35 +273,31 @@ export default function ProductDetail() {
 
           <div className="detail-specs desktop-only">
             <div className="spec-row">
-              <span className="spec-label">Price:</span>
-              <span className="spec-value">Negotiable</span>
+              <span className="spec-label">Category:</span>
+              <span className="spec-value">{product.category || 'N/A'}</span>
             </div>
             <div className="spec-row" style={{ marginTop: '20px' }}>
-              <span className="spec-label">Type:</span>
-              <span className="spec-value">Classic shoes</span>
+              <span className="spec-label">Condition:</span>
+              <span className="spec-value">New</span>
             </div>
             <div className="spec-row">
-              <span className="spec-label">Material:</span>
-              <span className="spec-value">Plastic material</span>
+              <span className="spec-label">Product ID:</span>
+              <span className="spec-value">#{product.id}</span>
             </div>
             <div className="spec-row">
-              <span className="spec-label">Design:</span>
-              <span className="spec-value">Modern nice</span>
+              <span className="spec-label">Rating:</span>
+              <span className="spec-value">{product.rating} / 5.0</span>
             </div>
           </div>
 
           <div className="detail-specs" style={{ borderTop: 'none', paddingTop: 0 }}>
             <div className="spec-row" style={{ marginTop: '20px' }}>
-              <span className="spec-label">Customization:</span>
-              <span className="spec-value">Customized logo and design custom packages</span>
+              <span className="spec-label">Availability:</span>
+              <span className="spec-value">In Stock</span>
             </div>
             <div className="spec-row">
-              <span className="spec-label">Protection:</span>
-              <span className="spec-value">Refund Policy</span>
-            </div>
-            <div className="spec-row">
-              <span className="spec-label">Warranty:</span>
-              <span className="spec-value">2 years full warranty</span>
+              <span className="spec-label">Shipping:</span>
+              <span className="spec-value">Worldwide Delivery</span>
             </div>
           </div>
         </div>
@@ -288,10 +305,10 @@ export default function ProductDetail() {
         {/* Supplier */}
         <aside className="supplier-card">
           <div className="supplier-header">
-            <div className="supplier-logo">R</div>
+            <div className="supplier-logo">{seller?.username ? seller.username.charAt(0).toUpperCase() : 'R'}</div>
             <div className="supplier-info">
               <h5>Supplier</h5>
-              <p style={{ fontSize: '14px' }}>Guanjoi Trading LLC</p>
+              <p style={{ fontSize: '14px' }}>{seller?.username || 'Unknown Seller'}</p>
             </div>
           </div>
           <div className="supplier-details">
@@ -302,7 +319,7 @@ export default function ProductDetail() {
           <div className="supplier-card-actions desktop-only">
             <button className="btn btn-primary" style={{ width: '100%', marginBottom: '10px' }} onClick={handleAddToCart}>Add to cart</button>
             <button className="btn btn-white" style={{ width: '100%', marginBottom: '10px', color: 'var(--primary-color)' }}>Send inquiry</button>
-            <button className="btn btn-white" style={{ width: '100%', color: 'var(--primary-color)' }}>Seller's profile</button>
+            <Link to={`/store/${product.userId || product.UserId || 1}`} className="btn btn-white" style={{ width: '100%', color: 'var(--primary-color)', display: 'block', textAlign: 'center', boxSizing: 'border-box' }}>Seller's profile</Link>
             <div style={{ textAlign: 'center', marginTop: '15px' }}>
               <Link 
                 to="#" 
@@ -331,18 +348,16 @@ export default function ProductDetail() {
                 <p>{product.description}</p>
                 <table className="spec-table">
                   <tbody>
-                    <tr><td>Model</td><td>#8786867</td></tr>
-                    <tr><td>Style</td><td>Classic style</td></tr>
-                    <tr><td>Certificate</td><td>ISO-898921212</td></tr>
-                    <tr><td>Size</td><td>34mm x 450mm x 19mm</td></tr>
-                    <tr><td>Memory</td><td>36GB RAM</td></tr>
+                    <tr><td>Category</td><td>{product.category || 'N/A'}</td></tr>
+                    <tr><td>Product ID</td><td>#{product.id || 'N/A'}</td></tr>
+                    <tr><td>Rating</td><td>{product.rating || 'N/A'}</td></tr>
+                    <tr><td>Sales</td><td>{product.orders || 0}</td></tr>
                   </tbody>
                 </table>
                 <div className="features-list" style={{ marginTop: '20px' }}>
-                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Some great feature name here</p>
-                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Lorem ipsum dolor sit amet, consectetur</p>
-                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Duis aute irure dolor in reprehenderit</p>
-                  <p style={{ color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Some great feature name here</p>
+                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Verified Quality Product</p>
+                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Fast shipping & Global delivery</p>
+                  <p style={{ marginBottom: '8px', color: 'var(--secondary-color)', fontSize: '14px' }}><i className="fa-solid fa-check" style={{ marginRight: '10px' }}></i> Trusted Seller: {seller?.username || 'Unknown Seller'}</p>
                 </div>
               </>
             )}
@@ -352,58 +367,57 @@ export default function ProductDetail() {
 
         <aside className="you-may-like">
           <h4>You may like</h4>
-          {[
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 30.png', title: 'Men Blazers Sets Elegant Formal', price: '$7.00 - $99.50' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png', title: 'Men Shirt Sleeve Polo Contrast', price: '$7.00 - $99.50' },
-            { img: './public/assets/Image/tech/8.png', title: 'Apple Watch Series Space Gray', price: '$7.00 - $99.50' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap (1).png', title: 'Basketball Crew Socks Long Stuff', price: '$7.00 - $99.50' },
-            { img: './public/assets/Layout/alibaba/Image/tech/image 34.png', title: 'New Summer Men\'s castrol T-Shirts', price: '$7.00 - $99.50' },
-          ].map((item, idx) => (
-            <div className="mini-product" key={idx}>
-              <div className="mini-img"><img src={item.img} alt="" style={{ width: '30px' }} /></div>
-              <div className="mini-info"><h5>{item.title}</h5><span>{item.price}</span></div>
-            </div>
-          ))}
+          {relatedProducts.length > 0 ? (
+            relatedProducts.slice(0, 5).map((item, idx) => (
+              <Link to={`/product?id=${item.id}`} className="mini-product" key={idx} style={{ textDecoration: 'none', color: 'inherit', display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '15px' }}>
+                <div className="mini-img" style={{ border: '1px solid var(--gray-300)', padding: '5px', borderRadius: '4px' }}>
+                  <img src={item.image} alt={item.title} style={{ width: '40px', height: '40px', objectFit: 'cover' }} />
+                </div>
+                <div className="mini-info" style={{ overflow: 'hidden' }}>
+                  <h5 style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: '0 0 5px 0' }}>{item.title}</h5>
+                  <span style={{ color: 'var(--secondary-color)', fontSize: '14px' }}>${Number(item.price).toFixed(2)}</span>
+                </div>
+              </Link>
+            ))
+          ) : (
+            <p style={{ fontSize: '14px', color: 'var(--secondary-color)' }}>No recommendations</p>
+          )}
         </aside>
       </div>
 
-      <aside className="mobile-you-may-like mobile-only">
-        <h4>Similar products</h4>
-        <div className="mobile-similar-scroll">
-          {[
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 30.png', title: 'T-shirts with multiple colors, for men', price: '$10.30' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png', title: 'T-shirts with multiple colors, for men', price: '$10.30' },
-            { img: './public/assets/Image/tech/8.png', title: 'T-shirts with multiple colors, for men', price: '$10.30' }
-          ].map((item, idx) => (
-            <div className="mobile-similar-item" key={idx}>
-              <div className="mobile-similar-img"><img src={item.img} alt="" style={{ width: '100%' }} /></div>
-              <p className="mobile-similar-price">{item.price}</p>
-              <p className="mobile-similar-title">{item.title}</p>
+      {relatedProducts.length > 0 && (
+        <>
+          <aside className="mobile-you-may-like mobile-only">
+            <h4>Similar products</h4>
+            <div className="mobile-similar-scroll">
+              {relatedProducts.map((item, idx) => (
+                <Link to={`/product?id=${item.id}`} className="mobile-similar-item" key={idx} style={{ textDecoration: 'none', color: 'inherit' }}>
+                  <div className="mobile-similar-img">
+                    <img src={item.image} alt={item.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  </div>
+                  <p className="mobile-similar-price">${Number(item.price).toFixed(2)}</p>
+                  <p className="mobile-similar-title" style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</p>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      </aside>
+          </aside>
 
-      {/* Related Products */}
-      <section className="related-products-box desktop-only">
-        <h3>Related products</h3>
-        <div className="related-grid">
-          {[
-            { img: './public/assets/Layout/alibaba/Image/cloth/image 24.png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-            { img: './public/assets/Image/tech/8.png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-            { img: './public/assets/Layout/alibaba/Image/tech/image 86.png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-            { img: './public/assets/Layout/alibaba/Image/cloth/Bitmap (2).png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-            { img: './public/assets/Layout/alibaba/Image/tech/image 85.png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-            { img: './public/assets/Layout/alibaba/Image/interior/image 90.png', title: 'Xiaomi Redmi 8 Original', price: '$32.00-$40.00' },
-          ].map((item, idx) => (
-            <div className="related-item" key={idx}>
-              <div className="related-item-img"><img src={item.img} alt="" style={{ height: '110px' }} /></div>
-              <p style={{ fontSize: '14px', color: '#1C1C1C', marginTop: '10px' }}>{item.title}</p>
-              <p style={{ fontSize: '14px', color: 'var(--secondary-color)', marginTop: '5px' }}>{item.price}</p>
+          <section className="related-products-box desktop-only">
+            <h3>Related products</h3>
+            <div className="related-grid">
+              {relatedProducts.map((item, idx) => (
+                <Link to={`/product?id=${item.id}`} className="related-item" key={idx} style={{ textDecoration: 'none' }}>
+                  <div className="related-item-img">
+                    <img src={item.image} alt={item.title} style={{ height: '110px', width: '100%', objectFit: 'contain' }} />
+                  </div>
+                  <p style={{ fontSize: '14px', color: '#1C1C1C', marginTop: '10px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{item.title}</p>
+                  <p style={{ fontSize: '14px', color: 'var(--secondary-color)', marginTop: '5px' }}>${Number(item.price).toFixed(2)}</p>
+                </Link>
+              ))}
             </div>
-          ))}
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
       {/* Discount Banner */}
       <div className="discount-banner desktop-only">

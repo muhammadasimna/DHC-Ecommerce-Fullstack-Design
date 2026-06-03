@@ -76,6 +76,16 @@ namespace Backend.Controllers
             return products;
         }
 
+        [HttpGet("user/{userId}")]
+        public async Task<ActionResult<IEnumerable<Product>>> GetUserProducts(int userId)
+        {
+            var products = await _context.Products
+                .Where(p => p.UserId == userId)
+                .OrderByDescending(p => p.Id)
+                .ToListAsync();
+            return Ok(products);
+        }
+
         [HttpGet("{id}")]
         public async Task<ActionResult<Product>> GetProduct(int id)
         {

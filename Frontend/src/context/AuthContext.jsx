@@ -86,8 +86,44 @@ export function AuthProvider({ children }) {
     setUser(null);
   };
 
+  const updateProfile = async ({ username, email, location, shippingPolicy }) => {
+    if (!token) {
+      throw new Error('Please log in first');
+    }
+
+    let res;
+    try {
+      res = await fetch(`${backendUrl}/auth/profile`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ username, email, location, shippingPolicy })
+      });
+    } catch {
+      throw new Error('Backend server is not reachable. Please start the API and try again.');
+    }
+
+    const data = await res.json().catch(() => ({}));
+    if (res.status === 404 || res.status === 405) {
+      throw new Error('Profile update API is not running. Please restart the backend server.');
+    }
+
+    if (res.status === 401) {
+      throw new Error(data.message || 'Session expired. Please sign in again.');
+    }
+
+    if (!res.ok || !data.user) {
+      throw new Error(data.message || 'Unable to update profile');
+    }
+
+    setUser(data.user);
+    return data.user;
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout, backendUrl, setBackendUrl }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, updateProfile, backendUrl, setBackendUrl }}>
       {children}
     </AuthContext.Provider>
   );

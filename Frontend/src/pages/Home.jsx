@@ -15,7 +15,7 @@ export default function Home() {
     { img: './public/assets/Image/tech/image 29.png', name: 'Headphones', tag: '-25%' },
     { img: './public/assets/Image/tech/6.png', name: 'Canon cameras', tag: '-25%' },
   ];
-  const homeOutdoorItems = [
+  const defaultHomeOutdoorItems = [
     { name: 'Soft chairs', price: 'From USD 19', img: './public/assets/Image/interior/1.png' },
     { name: 'Sofa & chair', price: 'From USD 19', img: './public/assets/Image/interior/3.png' },
     { name: 'Kitchen dishes', price: 'From USD 19', img: './public/assets/Image/interior/6.png' },
@@ -25,7 +25,7 @@ export default function Home() {
     { name: 'Home appliance', price: 'From USD 19', img: './public/assets/Image/interior/7.png' },
     { name: 'Coffee maker', price: 'From USD 10', img: './public/assets/Image/interior/9.png' },
   ];
-  const consumerItems = [
+  const defaultConsumerItems = [
     { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
     { name: 'Cameras', price: 'From USD 89', img: './public/assets/Image/tech/6.png' },
     { name: 'Headphones', price: 'From USD 10', img: './public/assets/Layout/alibaba/Image/tech/image 86.png' },
@@ -43,7 +43,20 @@ export default function Home() {
     { id: 5, image: './public/assets/Layout/alibaba/Image/cloth/image 26.png', price: 99, title: 'Leather wallet' }
   ];
   const [recommendedItems, setRecommendedItems] = useState(defaultRecommended);
-  const filteredDeals = query ? dealsItems.filter((x) => x.name.toLowerCase().includes(query)) : dealsItems;
+  const [realDeals, setRealDeals] = useState(dealsItems);
+  const [homeOutdoorItems, setHomeOutdoorItems] = useState(defaultHomeOutdoorItems);
+  const [consumerItems, setConsumerItems] = useState(defaultConsumerItems);
+  const [timeLeft, setTimeLeft] = useState(() => {
+    const savedEndTime = localStorage.getItem('dealsEndTime');
+    const now = Math.floor(Date.now() / 1000);
+    if (savedEndTime && Number(savedEndTime) > now) {
+      return Number(savedEndTime) - now;
+    }
+    const newDuration = 4 * 24 * 60 * 60 + 13 * 60 * 60 + 34 * 60 + 56;
+    localStorage.setItem('dealsEndTime', (now + newDuration).toString());
+    return newDuration;
+  });
+  const filteredDeals = query ? realDeals.filter((x) => x.name.toLowerCase().includes(query)) : realDeals;
   const filteredHomeOutdoor = query ? homeOutdoorItems.filter((x) => x.name.toLowerCase().includes(query)) : homeOutdoorItems;
   const filteredConsumer = query ? consumerItems.filter((x) => x.name.toLowerCase().includes(query)) : consumerItems;
   const filteredRecommended = query
@@ -51,20 +64,42 @@ export default function Home() {
     : recommendedItems;
 
   useEffect(() => {
-    const fetchRecommended = async () => {
-      if (!token) {
-        setRecommendedItems(defaultRecommended);
-        return;
-      }
+    if (new URLSearchParams(location.search).get('contact') !== '1') return;
+    const timeout = setTimeout(() => {
+      document.getElementById('contact-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    return () => clearTimeout(timeout);
+  }, [location.search]);
 
+  useEffect(() => {
+    const fetchRecommended = async () => {
       try {
-        const res = await fetch(`${backendUrl}/products/recommended`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        let res;
+        if (token) {
+          res = await fetch(`${backendUrl}/products/recommended`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+        } else {
+          // If not logged in, just fetch all products and show some as recommended
+          res = await fetch(`${backendUrl}/products`);
+        }
+        
         if (!res.ok) return;
         const data = await res.json();
         if (Array.isArray(data) && data.length > 0) {
-          setRecommendedItems(data);
+          // If not logged in we get all products, so let's shuffle and take 5
+          const items = token ? data : data.sort(() => 0.5 - Math.random()).slice(0, 5);
+          
+          const formattedItems = items.map(p => ({
+            id: p.id,
+            image: p.image,
+            price: p.price,
+            title: p.title
+          }));
+          
+          setRecommendedItems(formattedItems);
+        } else {
+          setRecommendedItems(defaultRecommended);
         }
       } catch {
         setRecommendedItems(defaultRecommended);
@@ -73,6 +108,83 @@ export default function Home() {
 
     fetchRecommended();
   }, [backendUrl, token]);
+
+  useEffect(() => {
+    const fetchDeals = async () => {
+      try {
+        const res = await fetch(`${backendUrl}/products`);
+        if (res.ok) {
+          const data = await res.json();
+          // Filter products with OldPrice > Price
+          let deals = data.filter(p => parseFloat(p.oldPrice) > parseFloat(p.price));
+          
+          if (deals.length > 0) {
+            deals = deals.sort(() => 0.5 - Math.random()).slice(0, 5);
+            const formattedDeals = deals.map(p => {
+              const oldP = parseFloat(p.oldPrice);
+              const newP = parseFloat(p.price);
+              const discount = Math.round(((oldP - newP) / oldP) * 100);
+              return {
+                id: p.id,
+                img: p.image,
+                name: p.title,
+                tag: `-${discount}%`
+              };
+            });
+            setRealDeals(formattedDeals);
+          } else {
+            setRealDeals(dealsItems);
+          }
+          
+          // Home and Outdoor logic
+          const homeItems = data.filter(p => p.category && (p.category.toLowerCase().includes('home') || p.category.toLowerCase().includes('interior'))).slice(0, 8);
+          if (homeItems.length > 0) {
+            setHomeOutdoorItems(homeItems.map(p => ({
+              id: p.id,
+              name: p.title,
+              price: `USD ${Number(p.price).toFixed(2)}`,
+              img: p.image
+            })));
+          }
+
+          // Consumer Electronics logic
+          const techItems = data.filter(p => p.category && (p.category.toLowerCase().includes('tech') || p.category.toLowerCase().includes('electronic'))).slice(0, 8);
+          if (techItems.length > 0) {
+            setConsumerItems(techItems.map(p => ({
+              id: p.id,
+              name: p.title,
+              price: `USD ${Number(p.price).toFixed(2)}`,
+              img: p.image
+            })));
+          }
+        }
+      } catch {
+        setRealDeals(dealsItems);
+      }
+    };
+
+    fetchDeals();
+
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev <= 1) {
+          fetchDeals(); // Refresh deals when timer hits zero
+          const newDuration = 4 * 24 * 60 * 60 + 13 * 60 * 60 + 34 * 60 + 56;
+          const now = Math.floor(Date.now() / 1000);
+          localStorage.setItem('dealsEndTime', (now + newDuration).toString());
+          return newDuration; // Reset timer
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [backendUrl]);
+
+  const days = String(Math.floor(timeLeft / (24 * 60 * 60))).padStart(2, '0');
+  const hours = String(Math.floor((timeLeft % (24 * 60 * 60)) / (60 * 60))).padStart(2, '0');
+  const minutes = String(Math.floor((timeLeft % (60 * 60)) / 60)).padStart(2, '0');
+  const seconds = String(Math.floor(timeLeft % 60)).padStart(2, '0');
   return (
     <main className="container">
       {/* Hero Section */}
@@ -80,22 +192,23 @@ export default function Home() {
         <div className="hero-box">
           <aside className="hero-sidebar">
             <ul>
-              <li className="active">Automobiles</li>
-              <li>Clothes and wear</li>
-              <li>Home interiors</li>
-              <li>Computer and tech</li>
-              <li>Tools, equipments</li>
-              <li>Sports and outdoor</li>
-              <li>Animal and pets</li>
-              <li>Machinery tools</li>
-              <li>More category</li>
+              {['Automobiles', 'Clothes and wear', 'Home interiors', 'Computer and tech', 'Tools, equipments', 'Sports and outdoor', 'Animal and pets', 'Machinery tools', 'More category'].map((cat, i) => (
+                <li 
+                  key={i} 
+                  className={i === 0 ? "active" : ""} 
+                  style={{cursor: 'pointer'}} 
+                  onClick={() => navigate(`/listing?category=${encodeURIComponent(cat)}`)}
+                >
+                  {cat}
+                </li>
+              ))}
             </ul>
           </aside>
           <div className="hero-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/Banner-board-800x420 2.png')", backgroundSize: 'cover', backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundColor: '#E3F0FF' }}>
             <div style={{ maxWidth: '300px' }}>
               <h2 style={{ fontWeight: 400 }}>Latest trending</h2>
               <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>Electronic items</h1>
-              <button className="btn btn-white">Learn more</button>
+              <button className="btn btn-white" onClick={() => navigate('/listing?category=Computer+and+tech')}>Learn more</button>
             </div>
           </div>
           <div className="hero-right">
@@ -119,10 +232,10 @@ export default function Home() {
                 </>
               )}
             </div>
-            <div className="sale-card">
+            <div className="sale-card" style={{ cursor: 'pointer' }} onClick={() => navigate('/listing')}>
               <p>Get US $10 off with a new supplier</p>
             </div>
-            <div className="quotes-card">
+            <div className="quotes-card" style={{ cursor: 'pointer' }} onClick={() => { const el = document.querySelector('.section-inquiry'); if(el) el.scrollIntoView({ behavior: 'smooth' }); }}>
               <p>Send quotes with supplier preferences</p>
             </div>
           </div>
@@ -138,15 +251,22 @@ export default function Home() {
               <p style={{ color: 'var(--secondary-color)', fontSize: '14px' }}>Electronic equipments</p>
             </div>
             <div className="timer">
-              <div className="timer-item"><span>04</span><label>Days</label></div>
-              <div className="timer-item"><span>13</span><label>Hour</label></div>
-              <div className="timer-item"><span>34</span><label>Min</label></div>
-              <div className="timer-item"><span>56</span><label>Sec</label></div>
+              <div className="timer-item"><span>{days}</span><label>Days</label></div>
+              <div className="timer-item"><span>{hours}</span><label>Hour</label></div>
+              <div className="timer-item"><span>{minutes}</span><label>Min</label></div>
+              <div className="timer-item"><span>{seconds}</span><label>Sec</label></div>
             </div>
           </div>
           <div className="deals-products">
             {filteredDeals.map((deal, idx) => (
-              <div className="deal-item" key={idx}>
+              <div 
+                className="deal-item" 
+                key={deal.id || idx}
+                style={{ cursor: deal.id ? 'pointer' : 'default' }}
+                onClick={() => {
+                  if (deal.id) navigate(`/product?id=${deal.id}`);
+                }}
+              >
                 <div className="deal-img"><img src={deal.img} alt={deal.name} /></div>
                 <p style={{ fontSize: '14px', marginBottom: '10px' }}>{deal.name}</p>
                 <span className="deal-tag">{deal.tag}</span>
@@ -161,11 +281,18 @@ export default function Home() {
         <div className="category-box">
           <div className="category-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/Group 969.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <h3 style={{ width: '150px', marginBottom: '20px' }}>Home and outdoor</h3>
-            <button className="btn btn-white">Source now</button>
+            <button className="btn btn-white" onClick={() => navigate('/listing?category=Home+interiors')}>Source now</button>
           </div>
           <div className="category-grid">
             {filteredHomeOutdoor.map((cat, idx) => (
-              <div className="category-item" key={idx}>
+              <div 
+                className="category-item" 
+                key={cat.id || idx}
+                style={{ cursor: cat.id ? 'pointer' : 'default' }}
+                onClick={() => {
+                  if (cat.id) navigate(`/product?id=${cat.id}`);
+                }}
+              >
                 <div className="category-item-info"><h4>{cat.name}</h4><p>{cat.price}</p></div>
                 <div className="category-item-img"><img src={cat.img} alt="" /></div>
               </div>
@@ -179,11 +306,18 @@ export default function Home() {
         <div className="category-box">
           <div className="category-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/image 98.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <h3 style={{ marginBottom: '20px' }}>Consumer electronics and gadgets</h3>
-            <button className="btn btn-white">Source now</button>
+            <button className="btn btn-white" onClick={() => navigate('/listing?category=Computer+and+tech')}>Source now</button>
           </div>
           <div className="category-grid">
             {filteredConsumer.map((cat, idx) => (
-              <div className="category-item" key={idx}>
+              <div 
+                className="category-item" 
+                key={cat.id || idx}
+                style={{ cursor: cat.id ? 'pointer' : 'default' }}
+                onClick={() => {
+                  if (cat.id) navigate(`/product?id=${cat.id}`);
+                }}
+              >
                 <div className="category-item-info"><h4>{cat.name}</h4><p>{cat.price}</p></div>
                 <div className="category-item-img"><img src={cat.img} alt="" /></div>
               </div>
@@ -193,7 +327,7 @@ export default function Home() {
       </section>
 
       {/* Inquiry Section */}
-      <section className="section-inquiry" style={{ backgroundImage: "linear-gradient(rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1 )), url('/assets/Image/backgrounds/Group 982.png')" }}>
+      <section id="contact-section" className="section-inquiry" style={{ backgroundImage: "linear-gradient(rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1 )), url('/assets/Image/backgrounds/Group 982.png')" }}>
         <div className="inquiry-text">
           <h2>An easy way to send requests to all suppliers</h2>
           <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut.</p>

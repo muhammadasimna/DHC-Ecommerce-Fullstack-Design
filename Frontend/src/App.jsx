@@ -9,6 +9,10 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import MyProducts from './pages/MyProducts';
 import Orders from './pages/Orders';
+import Profile from './pages/Profile';
+import Store from './pages/Store';
+import Favorites from './pages/Favorites';
+import InfoPage from './pages/InfoPage';
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthProvider } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
@@ -25,29 +29,37 @@ function App() {
               <Route index element={<Home />} />
               <Route path="login" element={<Login />} />
               <Route path="signup" element={<Signup />} />
-              <Route 
-                path="listing" 
+              <Route
+                path="listing"
                 element={
                   <ProtectedRoute>
                     <Listing />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="product" 
+              <Route
+                path="product"
                 element={
                   <ProtectedRoute>
                     <ProductDetail />
                   </ProtectedRoute>
-                } 
+                }
               />
-              <Route 
-                path="cart" 
+              <Route
+                path="cart"
                 element={
                   <ProtectedRoute>
                     <Cart />
                   </ProtectedRoute>
-                } 
+                }
+              />
+              <Route
+                path="profile"
+                element={
+                  <ProtectedRoute>
+                    <Profile />
+                  </ProtectedRoute>
+                }
               />
               <Route
                 path="my-products"
@@ -62,6 +74,23 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <Orders />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="favorites"
+                element={
+                  <ProtectedRoute>
+                    <Favorites />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="info/:slug" element={<InfoPage />} />
+              <Route
+                path="store/:id"
+                element={
+                  <ProtectedRoute>
+                    <Store />
                   </ProtectedRoute>
                 }
               />

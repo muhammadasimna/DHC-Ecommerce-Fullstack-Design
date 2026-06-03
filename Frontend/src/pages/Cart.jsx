@@ -54,21 +54,17 @@ export default function Cart() {
     navigate('/orders');
   };
 
-  const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
-  const displayedCartItems = query
-    ? cartItems.filter((item) =>
-        [item.product?.title, item.product?.category, item.product?.description]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(query))
-      )
-    : cartItems;
-  const displayedSavedItems = query
-    ? savedItems.filter((item) =>
-        [item.product?.title, item.product?.category, item.product?.description]
-          .filter(Boolean)
-          .some((v) => String(v).toLowerCase().includes(query))
-      )
-    : savedItems;
+  const queryParams = new URLSearchParams(location.search);
+  const query = queryParams.get('q')?.toLowerCase().trim() || '';
+  const category = queryParams.get('category')?.toLowerCase().trim() || '';
+  const matchesCartSearch = (item) => {
+    const values = [item.product?.title, item.product?.category, item.product?.description].filter(Boolean);
+    const matchesQuery = !query || values.some((v) => String(v).toLowerCase().includes(query));
+    const matchesCategory = !category || values.some((v) => String(v).toLowerCase().includes(category));
+    return matchesQuery && matchesCategory;
+  };
+  const displayedCartItems = cartItems.filter(matchesCartSearch);
+  const displayedSavedItems = savedItems.filter(matchesCartSearch);
 
   if (loading) {
     return (

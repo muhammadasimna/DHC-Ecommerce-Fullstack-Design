@@ -12,7 +12,7 @@ export default function MyProducts() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [productForm, setProductForm] = useState({
     title: '',
-    imageUrls: '',
+    images: [''],
     price: '0',
     oldPrice: '',
     rating: '0',
@@ -58,7 +58,7 @@ export default function MyProducts() {
     setIsFormOpen(false);
     setProductForm({
       title: '',
-      imageUrls: '',
+      images: [''],
       price: '0',
       oldPrice: '',
       rating: '0',
@@ -69,6 +69,32 @@ export default function MyProducts() {
     });
   };
 
+  const handleImageUpload = (index, file) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target.result;
+      setProductForm((prev) => {
+        const newImages = [...prev.images];
+        newImages[index] = base64;
+        return { ...prev, images: newImages };
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const addImageSlot = () => {
+    setProductForm((prev) => ({ ...prev, images: [...prev.images, ''] }));
+  };
+
+  const removeImageSlot = (index) => {
+    setProductForm((prev) => {
+      const newImages = [...prev.images];
+      newImages.splice(index, 1);
+      return { ...prev, images: newImages };
+    });
+  };
+
   const handleSubmitProduct = async (e) => {
     e.preventDefault();
     if (!token) {
@@ -76,10 +102,7 @@ export default function MyProducts() {
       return;
     }
 
-    const parsedImages = productForm.imageUrls
-      .split('\n')
-      .map((img) => img.trim())
-      .filter(Boolean);
+    const parsedImages = productForm.images.filter(Boolean);
 
     const payload = {
       title: productForm.title,
@@ -144,20 +167,20 @@ export default function MyProducts() {
     setIsFormOpen(true);
     setProductForm({
       title: product.title || '',
-      imageUrls: (() => {
-        const images = [];
-        if (product.image) images.push(product.image);
+      images: (() => {
+        const imagesList = [];
+        if (product.image) imagesList.push(product.image);
         try {
           const extra = JSON.parse(product.additionalImagesJson || '[]');
           if (Array.isArray(extra)) {
             extra.forEach((img) => {
-              if (img && !images.includes(img)) images.push(img);
+              if (img && !imagesList.includes(img)) imagesList.push(img);
             });
           }
         } catch {
           // ignore parse errors for old data
         }
-        return images.join('\n');
+        return imagesList.length > 0 ? imagesList : [''];
       })(),
       price: String(product.price ?? 0),
       oldPrice: product.oldPrice == null ? '' : String(product.oldPrice),
@@ -185,7 +208,9 @@ export default function MyProducts() {
     );
   };
 
-  const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
+  const queryParams = new URLSearchParams(location.search);
+  const query = queryParams.get('q')?.toLowerCase().trim() || '';
+  const category = queryParams.get('category')?.toLowerCase().trim() || '';
   const displayedProducts = query
     ? myProducts.filter((item) =>
         [item.title, item.category, item.description]
@@ -193,6 +218,13 @@ export default function MyProducts() {
           .some((v) => String(v).toLowerCase().includes(query))
       )
     : myProducts;
+  const categoryFilteredProducts = category
+    ? displayedProducts.filter((item) =>
+        [item.title, item.category, item.description]
+          .filter(Boolean)
+          .some((v) => String(v).toLowerCase().includes(category))
+      )
+    : displayedProducts;
 
   return (
     <div className="container">
@@ -229,10 +261,10 @@ export default function MyProducts() {
           </button>
         </div>
 
-        {displayedProducts.length > 0 ? (
+        {categoryFilteredProducts.length > 0 ? (
           <>
             <div className="listing-top-bar my-products-toolbar">
-              <div className="item-count"><span>{displayedProducts.length} items found</span></div>
+              <div className="item-count"><span>{categoryFilteredProducts.length} items found</span></div>
               <div className="view-options">
                 <div className="view-toggle">
                   <button
@@ -252,7 +284,7 @@ export default function MyProducts() {
             </div>
 
             <div className={viewMode === 'grid' ? 'product-grid-container my-products-grid-view' : 'product-list-container my-products-list-view'}>
-              {displayedProducts.map((item) => (
+              {categoryFilteredProducts.map((item) => (
                 <div key={item.id} className={viewMode === 'grid' ? 'product-grid-item my-product-card' : 'product-list-item my-product-card'}>
                   <div className={viewMode === 'grid' ? 'product-grid-img' : 'product-list-img'}>
                     <img src={item.image} alt={item.title} className="my-product-image" />
@@ -304,7 +336,61 @@ export default function MyProducts() {
               <div className="my-products-grid">
                 <input className="my-products-input" value={productForm.title} onChange={(e) => setProductForm(prev => ({ ...prev, title: e.target.value }))} placeholder="Title" required />
                 <input className="my-products-input" value={productForm.category} onChange={(e) => setProductForm(prev => ({ ...prev, category: e.target.value }))} placeholder="Category" required />
-                <textarea className="my-products-textarea" value={productForm.imageUrls} onChange={(e) => setProductForm(prev => ({ ...prev, imageUrls: e.target.value }))} placeholder="Image URLs (one per line). First image will be used on card/main view." rows={3} required />
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '500' }}>Product Images</label>
+                  {productForm.images.map((imgBase64, index) => (
+                    <div key={index} style={{ display: 'flex', flexDirection: 'column', gap: '5px', marginBottom: '15px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <input 
+                          type="text"
+                          placeholder="Paste image URL here..."
+                          value={imgBase64 && imgBase64.startsWith('data:image') ? 'Uploaded Local File (Base64)' : imgBase64}
+                          onChange={(e) => {
+                            // If they are trying to edit the text of an uploaded file, clear it
+                            if (imgBase64 && imgBase64.startsWith('data:image')) {
+                              setProductForm(prev => {
+                                const newImages = [...prev.images];
+                                newImages[index] = '';
+                                return { ...prev, images: newImages };
+                              });
+                              return;
+                            }
+                            const val = e.target.value;
+                            setProductForm(prev => {
+                              const newImages = [...prev.images];
+                              newImages[index] = val;
+                              return { ...prev, images: newImages };
+                            });
+                          }}
+                          className="my-products-input"
+                          style={{ flex: '1 1 200px', padding: '8px', color: (imgBase64 && imgBase64.startsWith('data:image')) ? 'var(--green)' : 'inherit' }}
+                          required={index === 0 && !imgBase64}
+                        />
+                        <span style={{ fontSize: '13px', color: 'var(--secondary-color)', whiteSpace: 'nowrap' }}>OR</span>
+                        <input 
+                          type="file" 
+                          accept="image/*"
+                          onChange={(e) => {
+                            if (e.target.files && e.target.files[0]) {
+                              handleImageUpload(index, e.target.files[0]);
+                            }
+                          }}
+                          className="my-products-input"
+                          style={{ flex: '1 1 150px', padding: '8px', fontSize: '12px' }}
+                        />
+                        {imgBase64 && <img src={imgBase64.startsWith('Uploaded') ? '' : imgBase64} alt={`Preview ${index}`} style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px' }} />}
+                        {productForm.images.length > 1 && (
+                          <button type="button" className="btn btn-white" onClick={() => removeImageSlot(index)} style={{ padding: '6px 10px' }}>
+                            <i className="fa-solid fa-trash" style={{ color: 'var(--red)' }}></i>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button type="button" className="btn btn-white" onClick={addImageSlot} style={{ fontSize: '13px', padding: '6px 12px' }}>
+                    <i className="fa-solid fa-plus" style={{ marginRight: '5px' }}></i> Add new picture
+                  </button>
+                </div>
                   <input className="my-products-input" value={productForm.price} onChange={(e) => setProductForm(prev => ({ ...prev, price: e.target.value }))} type="number" step="0.01" placeholder="Price" required />
                 <input className="my-products-input" value={productForm.oldPrice} onChange={(e) => setProductForm(prev => ({ ...prev, oldPrice: e.target.value }))} type="number" step="0.01" placeholder="Old Price (optional)" />
                 <input className="my-products-input" value={productForm.orders} onChange={(e) => setProductForm(prev => ({ ...prev, orders: e.target.value }))} type="number" placeholder="Orders" />

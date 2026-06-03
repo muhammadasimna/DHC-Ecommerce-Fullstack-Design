@@ -7,6 +7,7 @@ export default function Listing() {
   const [viewMode, setViewMode] = useState('grid');
   const [sortMode, setSortMode] = useState('newest');
   const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
   const { backendUrl, token, user } = useAuth();
   const { addToCart, saveProductDirectly, savedItems = [], removeFromCart } = useCart();
   const navigate = useNavigate();
@@ -334,6 +335,36 @@ export default function Listing() {
     if (sortMode === 'rating') return Number(b.rating || 0) - Number(a.rating || 0);
     return Number(b.id || 0) - Number(a.id || 0);
   });
+  const productsPerPage = viewMode === 'grid' ? 9 : 6;
+  const totalPages = Math.max(1, Math.ceil(sortedFilteredProducts.length / productsPerPage));
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const paginatedProducts = sortedFilteredProducts.slice(
+    (safeCurrentPage - 1) * productsPerPage,
+    safeCurrentPage * productsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    query,
+    categoryFromUrl,
+    offersOnly,
+    appliedMinPrice,
+    appliedMaxPrice,
+    selectedCategory,
+    selectedBrands,
+    selectedFeatures,
+    selectedCondition,
+    selectedRatings,
+    sortMode,
+    viewMode
+  ]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
 
   const sortLabels = {
     newest: 'Newest',
@@ -837,7 +868,7 @@ export default function Listing() {
 
           {/* Product List / Grid */}
           <div className={viewMode === 'grid' ? 'product-grid-container' : 'product-list-container'}>
-            {sortedFilteredProducts.map(product => {
+            {paginatedProducts.map(product => {
               const offerPercent = getOfferPercent(product);
               return (
               <div key={product.id} className={viewMode === 'grid' ? 'product-grid-item' : 'product-list-item'}>
@@ -911,12 +942,36 @@ export default function Listing() {
           </div>
 
           {/* Pagination */}
-          <div className="pagination desktop-only">
-            <div className="page-btn"><i className="fa-solid fa-chevron-left"></i></div>
-            <div className="page-btn active">1</div>
-            <div className="page-btn">2</div>
-            <div className="page-btn"><i className="fa-solid fa-chevron-right"></i></div>
-          </div>
+          {totalPages > 1 && (
+            <div className="pagination">
+              <button
+                type="button"
+                className="page-btn"
+                disabled={safeCurrentPage === 1}
+                onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+              >
+                <i className="fa-solid fa-chevron-left"></i>
+              </button>
+              {Array.from({ length: totalPages }, (_, index) => index + 1).map((page) => (
+                <button
+                  key={page}
+                  type="button"
+                  className={`page-btn ${safeCurrentPage === page ? 'active' : ''}`}
+                  onClick={() => setCurrentPage(page)}
+                >
+                  {page}
+                </button>
+              ))}
+              <button
+                type="button"
+                className="page-btn"
+                disabled={safeCurrentPage === totalPages}
+                onClick={() => setCurrentPage((page) => Math.min(totalPages, page + 1))}
+              >
+                <i className="fa-solid fa-chevron-right"></i>
+              </button>
+            </div>
+          )}
         </main>
       </div>
     </div>

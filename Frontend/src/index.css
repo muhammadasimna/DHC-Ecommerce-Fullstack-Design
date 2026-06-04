@@ -1557,7 +1557,17 @@ footer {
 }
 
 .page-btn.active {
-    background-color: var(--gray-200);
+    background-color: var(--primary-light);
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+    font-weight: 600;
+}
+
+.page-btn:disabled {
+    color: var(--gray-400);
+    background-color: var(--gray-100);
+    cursor: not-allowed;
+    opacity: 0.65;
 }
 
 /* Active Filters */
@@ -2294,14 +2304,32 @@ body.cart-page .nav-bottom {
     gap: 20px;
 }
 
+.saved-item {
+    min-width: 0;
+}
+
 .saved-img {
     height: 180px;
+    width: 100%;
     background-color: var(--gray-100);
     border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;
     margin-bottom: 15px;
+    overflow: hidden;
+    padding: 10px;
+}
+
+.saved-img img,
+.mobile-saved-img img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    object-position: center;
 }
 
 .mobile-profile-icon { display: none; }

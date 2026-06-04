@@ -335,6 +335,9 @@ export default function Listing() {
     if (sortMode === 'rating') return Number(b.rating || 0) - Number(a.rating || 0);
     return Number(b.id || 0) - Number(a.id || 0);
   });
+  const brandFilterKey = selectedBrands.join('|');
+  const featureFilterKey = selectedFeatures.join('|');
+  const ratingFilterKey = selectedRatings.join('|');
   const productsPerPage = viewMode === 'grid' ? 9 : 6;
   const totalPages = Math.max(1, Math.ceil(sortedFilteredProducts.length / productsPerPage));
   const safeCurrentPage = Math.min(currentPage, totalPages);
@@ -352,10 +355,10 @@ export default function Listing() {
     appliedMinPrice,
     appliedMaxPrice,
     selectedCategory,
-    selectedBrands,
-    selectedFeatures,
+    brandFilterKey,
+    featureFilterKey,
     selectedCondition,
-    selectedRatings,
+    ratingFilterKey,
     sortMode,
     viewMode
   ]);

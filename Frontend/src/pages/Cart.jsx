@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ export default function Cart() {
   const { token, backendUrl } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const [openMobileMenuId, setOpenMobileMenuId] = useState(null);
 
   useEffect(() => {
     document.body.classList.add('cart-page');
@@ -65,6 +66,7 @@ export default function Cart() {
   };
   const displayedCartItems = cartItems.filter(matchesCartSearch);
   const displayedSavedItems = savedItems.filter(matchesCartSearch);
+  const closeMobileMenu = () => setOpenMobileMenuId(null);
 
   if (loading) {
     return (
@@ -115,7 +117,52 @@ export default function Cart() {
                     <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ width: '60px' }} />
                   </div>
                   <div className="cart-item-info" style={{ position: 'relative' }}>
-                    <i className="fa-solid fa-ellipsis-vertical mobile-only" style={{ position: 'absolute', right: '0', top: '0', color: '#8B96A5', fontSize: '18px' }}></i>
+                    <div className="mobile-cart-menu-wrap mobile-only">
+                      <button
+                        type="button"
+                        className="mobile-cart-menu-trigger"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setOpenMobileMenuId((id) => (id === item.id ? null : item.id));
+                        }}
+                        aria-label="Open item actions"
+                        aria-expanded={openMobileMenuId === item.id}
+                      >
+                        <i className="fa-solid fa-ellipsis-vertical"></i>
+                      </button>
+                      {openMobileMenuId === item.id && (
+                        <div className="mobile-cart-dropdown">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              saveForLater(item.id);
+                              closeMobileMenu();
+                            }}
+                          >
+                            <i className="fa-regular fa-bookmark"></i> Save for later
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              handleCheckout(item.id);
+                              closeMobileMenu();
+                            }}
+                          >
+                            <i className="fa-solid fa-bag-shopping"></i> Checkout now
+                          </button>
+                          <button
+                            type="button"
+                            className="danger"
+                            onClick={() => {
+                              removeFromCart(item.id);
+                              closeMobileMenu();
+                            }}
+                          >
+                            <i className="fa-solid fa-trash"></i> Remove
+                          </button>
+                        </div>
+                      )}
+                    </div>
                     <h4
                       style={{ fontSize: '16px', fontWeight: 500, color: '#1C1C1C', paddingRight: '20px', cursor: item.productId ? 'pointer' : 'default' }}
                       onClick={() => item.productId && navigate(`/product?id=${item.productId}`)}
@@ -237,9 +284,9 @@ export default function Cart() {
                   className="saved-img"
                   style={{ cursor: item.productId ? 'pointer' : 'default' }}
                   onClick={() => item.productId && navigate(`/product?id=${item.productId}`)}
-                >
-                  <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ width: '140px' }} />
-                </div>
+                  >
+                    <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" />
+                  </div>
                 <p style={{ fontWeight: 600, marginBottom: '10px' }}>${item.product?.price?.toFixed(2)}</p>
                 <p
                   style={{ fontSize: '14px', color: 'var(--secondary-color)', marginBottom: '15px', cursor: item.productId ? 'pointer' : 'default' }}

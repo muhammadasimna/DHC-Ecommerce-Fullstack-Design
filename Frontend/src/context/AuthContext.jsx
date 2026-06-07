@@ -2,7 +2,7 @@ import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext(null);
 
-export const API_URL = 'http://dhc-fullstack-ecommerce.runasp.net/api'; // ASP.NET Core API default IIS Express/Kestrel port. Let's make sure it handles both or uses relative or standard localhost port. We can make it customizable, but 5000/5244/7244/5144 are typical. Let's check typical launchSettings.json first.
+export const API_URL = 'https://dhc-fullstack-ecommerce.runasp.net/api'; // ASP.NET Core API default IIS Express/Kestrel port. Let's make sure it handles both or uses relative or standard localhost port. We can make it customizable, but 5000/5244/7244/5144 are typical. Let's check typical launchSettings.json first.
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -11,7 +11,7 @@ export function AuthProvider({ children }) {
 
   // We will dynamically discover the port or try default ports if launchSettings.json is not read yet.
   // Actually let's check launchSettings.json to get the exact port!
-  const [backendUrl, setBackendUrl] = useState('http://dhc-fullstack-ecommerce.runasp.net/api'); 
+  const [backendUrl, setBackendUrl] = useState('https://dhc-fullstack-ecommerce.runasp.net/api'); 
 
   useEffect(() => {
     // Check if there is a saved token in localStorage and validate/load user

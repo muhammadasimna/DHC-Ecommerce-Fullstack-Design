@@ -56,7 +56,11 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll",
         policy =>
         {
-            policy.AllowAnyOrigin()
+            policy.WithOrigins(
+                      "https://dhc-ecommerce-fullstack.netlify.app",
+                      "http://localhost:5173",
+                      "http://localhost:5174"
+                  )
                   .AllowAnyMethod()
                   .AllowAnyHeader();
         });
@@ -81,13 +85,12 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-if (!app.Environment.IsDevelopment())
-{
-    app.UseHttpsRedirection();
-}
-
-// Enable CORS
+// Enable CORS (must be before any other middleware that might reject/redirect requests)
 app.UseCors("AllowAll");
+
+// Note: HTTPS redirection removed - runasp.net handles HTTPS at the reverse proxy level.
+// Adding UseHttpsRedirection here breaks CORS preflight requests on HTTP endpoints.
+
 
 app.UseAuthentication();
 app.UseAuthorization();

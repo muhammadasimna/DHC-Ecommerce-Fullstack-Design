@@ -647,7 +647,8 @@
         border-radius: 0;
         margin: 0 -15px 0px -15px;
         /* Full width bleeding */
-        background-image: linear-gradient(rgba(35, 124, 255, 0.9), rgba(35, 124, 255, 0.9)), url('/assets/Image/backgrounds/image 107.png') !important;
+        background-image: linear-gradient(rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.1)),
+            url("/assets/Image/backgrounds/Group 982.png") !important;
     }
 
     .inquiry-text h2 {

@@ -58,8 +58,8 @@ builder.Services.AddCors(options =>
         {
             policy.WithOrigins(
                       "https://dhc-ecommerce-fullstack.netlify.app",
-                      "http://localhost:5173",
-                      "http://localhost:5174"
+                      "https://localhost:5173",
+                      "http://localhost:5173"
                   )
                   .AllowAnyMethod()
                   .AllowAnyHeader();

@@ -2,7 +2,7 @@ Frontend/node_modules
 
 .github
 
-Frontend/dist
+# Frontend/dist
 
 
 Backend/.vs

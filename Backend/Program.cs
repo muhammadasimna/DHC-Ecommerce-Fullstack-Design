@@ -11,8 +11,15 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 // Configure SQLite Database
+//builder.Services.AddDbContext<AppDbContext>(options =>
+//    options.UseSqlite("Data Source=ecommerce.db"));
+
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlite("Data Source=ecommerce.db"));
+    options.UseSqlServer("Server=db55091.public.databaseasp.net;Database=db55091;User Id=db55091;Password=Mx7?g5%X#T9n;Encrypt=True;TrustServerCertificate=True;MultipleActiveResultSets=True;",
+        sqlServerOptions => sqlServerOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null)));
 
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -63,55 +70,7 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureCreated();
-
-    var hasUserIdColumn = context.Database
-        .SqlQueryRaw<int>("SELECT COUNT(*) FROM pragma_table_info('Products') WHERE name = 'UserId'")
-        .AsEnumerable()
-        .FirstOrDefault() > 0;
-
-    if (!hasUserIdColumn)
-    {
-        context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN UserId INTEGER NULL");
-    }
-
-    var hasAdditionalImagesColumn = context.Database
-        .SqlQueryRaw<int>("SELECT COUNT(*) FROM pragma_table_info('Products') WHERE name = 'AdditionalImagesJson'")
-        .AsEnumerable()
-        .FirstOrDefault() > 0;
-
-    if (!hasAdditionalImagesColumn)
-    {
-        context.Database.ExecuteSqlRaw("ALTER TABLE Products ADD COLUMN AdditionalImagesJson TEXT NOT NULL DEFAULT '[]'");
-    }
-
-    context.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS Orders (
-    Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    UserId INTEGER NOT NULL,
-    CreatedAtUtc TEXT NOT NULL,
-    Subtotal TEXT NOT NULL,
-    Discount TEXT NOT NULL,
-    Tax TEXT NOT NULL,
-    Total TEXT NOT NULL,
-    Status TEXT NOT NULL,
-    FOREIGN KEY(UserId) REFERENCES Users(Id) ON DELETE CASCADE
-)");
-
-    context.Database.ExecuteSqlRaw(@"
-CREATE TABLE IF NOT EXISTS OrderItems (
-    Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-    OrderId INTEGER NOT NULL,
-    ProductId INTEGER NOT NULL,
-    ProductTitle TEXT NOT NULL,
-    ProductImage TEXT NOT NULL,
-    UnitPrice TEXT NOT NULL,
-    Quantity INTEGER NOT NULL,
-    Size TEXT NOT NULL,
-    Color TEXT NOT NULL,
-    FOREIGN KEY(OrderId) REFERENCES Orders(Id) ON DELETE CASCADE,
-    FOREIGN KEY(ProductId) REFERENCES Products(Id) ON DELETE RESTRICT
-)");
+    context.Database.Migrate();
 }
 
 // Configure the HTTP request pipeline.

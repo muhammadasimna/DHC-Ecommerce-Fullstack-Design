@@ -9,38 +9,38 @@ export default function Home() {
   const query = new URLSearchParams(location.search).get('q')?.toLowerCase().trim() || '';
 
   const dealsItems = [
-    { img: './public/assets/Image/tech/8.png', name: 'Smart watches', tag: '-25%' },
-    { img: './public/assets/Image/tech/image 34.png', name: 'Laptops', tag: '-15%' },
-    { img: './public/assets/Image/tech/6.png', name: 'GoPro cameras', tag: '-40%' },
-    { img: './public/assets/Image/tech/image 29.png', name: 'Headphones', tag: '-25%' },
-    { img: './public/assets/Image/tech/6.png', name: 'Canon cameras', tag: '-25%' },
+    { img: '/assets/Image/tech/8.png', name: 'Smart watches', tag: '-25%' },
+    { img: '/assets/Image/tech/image 34.png', name: 'Laptops', tag: '-15%' },
+    { img: '/assets/Image/tech/6.png', name: 'GoPro cameras', tag: '-40%' },
+    { img: '/assets/Image/tech/image 29.png', name: 'Headphones', tag: '-25%' },
+    { img: '/assets/Image/tech/6.png', name: 'Canon cameras', tag: '-25%' },
   ];
   const defaultHomeOutdoorItems = [
-    { name: 'Soft chairs', price: 'From USD 19', img: './public/assets/Image/interior/1.png' },
-    { name: 'Sofa & chair', price: 'From USD 19', img: './public/assets/Image/interior/3.png' },
-    { name: 'Kitchen dishes', price: 'From USD 19', img: './public/assets/Image/interior/6.png' },
-    { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
-    { name: 'Kitchen mixer', price: 'From USD 100', img: './public/assets/Image/interior/image 89.png' },
-    { name: 'Blenders', price: 'From USD 39', img: './public/assets/Image/interior/image 93.png' },
-    { name: 'Home appliance', price: 'From USD 19', img: './public/assets/Image/interior/7.png' },
-    { name: 'Coffee maker', price: 'From USD 10', img: './public/assets/Image/interior/9.png' },
+    { name: 'Soft chairs', price: 'From USD 19', img: '/assets/Image/interior/1.png' },
+    { name: 'Sofa & chair', price: 'From USD 19', img: '/assets/Image/interior/3.png' },
+    { name: 'Kitchen dishes', price: 'From USD 19', img: '/assets/Image/interior/6.png' },
+    { name: 'Smart watches', price: 'From USD 19', img: '/assets/Image/tech/8.png' },
+    { name: 'Kitchen mixer', price: 'From USD 100', img: '/assets/Image/interior/image 89.png' },
+    { name: 'Blenders', price: 'From USD 39', img: '/assets/Image/interior/image 93.png' },
+    { name: 'Home appliance', price: 'From USD 19', img: '/assets/Image/interior/7.png' },
+    { name: 'Coffee maker', price: 'From USD 10', img: '/assets/Image/interior/9.png' },
   ];
   const defaultConsumerItems = [
-    { name: 'Smart watches', price: 'From USD 19', img: './public/assets/Image/tech/8.png' },
-    { name: 'Cameras', price: 'From USD 89', img: './public/assets/Image/tech/6.png' },
-    { name: 'Headphones', price: 'From USD 10', img: './public/assets/Layout/alibaba/Image/tech/image 86.png' },
-    { name: 'Smart watches', price: 'From USD 90', img: './public/assets/Layout/alibaba/Image/tech/image 85.png' },
-    { name: 'Gaming set', price: 'From USD 35', img: './public/assets/Image/tech/image 29.png' },
-    { name: 'Laptops & PC', price: 'From USD 340', img: './public/assets/Image/tech/image 34.png' },
-    { name: 'Smartphones', price: 'From USD 19', img: './public/assets/Image/tech/image 32.png' },
-    { name: 'Electric kettle', price: 'From USD 240', img: './public/assets/Image/tech/image 33.png' },
+    { name: 'Smart watches', price: 'From USD 19', img: '/assets/Image/tech/8.png' },
+    { name: 'Cameras', price: 'From USD 89', img: '/assets/Image/tech/6.png' },
+    { name: 'Headphones', price: 'From USD 10', img: '/assets/Layout/alibaba/Image/tech/image 86.png' },
+    { name: 'Smart watches', price: 'From USD 90', img: '/assets/Layout/alibaba/Image/tech/image 85.png' },
+    { name: 'Gaming set', price: 'From USD 35', img: '/assets/Image/tech/image 29.png' },
+    { name: 'Laptops & PC', price: 'From USD 340', img: '/assets/Image/tech/image 34.png' },
+    { name: 'Smartphones', price: 'From USD 19', img: '/assets/Image/tech/image 32.png' },
+    { name: 'Electric kettle', price: 'From USD 240', img: '/assets/Image/tech/image 33.png' },
   ];
   const defaultRecommended = [
-    { id: 1, image: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png', price: 10.3, title: 'T-shirts with multiple colors, for men' },
-    { id: 2, image: './public/assets/Layout/alibaba/Image/cloth/2 1.png', price: 10.3, title: 'Jeans shorts for men blue color' },
-    { id: 3, image: './public/assets/Layout/alibaba/Image/cloth/image 30.png', price: 12.5, title: 'Brown winter coat medium size' },
-    { id: 4, image: './public/assets/Layout/alibaba/Image/cloth/image 24.png', price: 34, title: 'Jeans bag for travel for men' },
-    { id: 5, image: './public/assets/Layout/alibaba/Image/cloth/image 26.png', price: 99, title: 'Leather wallet' }
+    { id: 1, image: '/assets/Layout/alibaba/Image/cloth/Bitmap.png', price: 10.3, title: 'T-shirts with multiple colors, for men' },
+    { id: 2, image: '/assets/Layout/alibaba/Image/cloth/2 1.png', price: 10.3, title: 'Jeans shorts for men blue color' },
+    { id: 3, image: '/assets/Layout/alibaba/Image/cloth/image 30.png', price: 12.5, title: 'Brown winter coat medium size' },
+    { id: 4, image: '/assets/Layout/alibaba/Image/cloth/image 24.png', price: 34, title: 'Jeans bag for travel for men' },
+    { id: 5, image: '/assets/Layout/alibaba/Image/cloth/image 26.png', price: 99, title: 'Leather wallet' }
   ];
   const [recommendedItems, setRecommendedItems] = useState(defaultRecommended);
   const [realDeals, setRealDeals] = useState(dealsItems);
@@ -204,7 +204,7 @@ export default function Home() {
               ))}
             </ul>
           </aside>
-          <div className="hero-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/Banner-board-800x420 2.png')", backgroundSize: 'cover', backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundColor: '#E3F0FF' }}>
+          <div className="hero-banner" style={{ backgroundImage: "url('/assets/Image/backgrounds/Banner-board-800x420 2.png')", backgroundSize: 'cover', backgroundPosition: 'right center', backgroundRepeat: 'no-repeat', backgroundColor: '#E3F0FF' }}>
             <div style={{ maxWidth: '300px' }}>
               <h2 style={{ fontWeight: 400 }}>Latest trending</h2>
               <h1 style={{ fontSize: '32px', marginBottom: '20px' }}>Electronic items</h1>
@@ -279,7 +279,7 @@ export default function Home() {
       {/* Home and Outdoor */}
       <section className="section-category">
         <div className="category-box">
-          <div className="category-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/Group 969.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div className="category-banner" style={{ backgroundImage: "url('/assets/Image/backgrounds/Group 969.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <h3 style={{ width: '150px', marginBottom: '20px' }}>Home and outdoor</h3>
             <button className="btn btn-white" onClick={() => navigate('/listing?category=Home+interiors')}>Source now</button>
           </div>
@@ -304,7 +304,7 @@ export default function Home() {
       {/* Consumer Electronics */}
       <section className="section-category">
         <div className="category-box">
-          <div className="category-banner" style={{ backgroundImage: "url('./public/assets/Image/backgrounds/image 98.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
+          <div className="category-banner" style={{ backgroundImage: "url('/assets/Image/backgrounds/image 98.png')", backgroundSize: 'cover', backgroundPosition: 'center' }}>
             <h3 style={{ marginBottom: '20px' }}>Consumer electronics and gadgets</h3>
             <button className="btn btn-white" onClick={() => navigate('/listing?category=Computer+and+tech')}>Source now</button>
           </div>
@@ -374,10 +374,10 @@ export default function Home() {
         <h2>Our extra services</h2>
         <div className="services-grid">
           {[
-            { img: './public/assets/Image/backgrounds/Mask group.png', icon: 'fa-solid fa-magnifying-glass', title: 'Source from Industry Hubs' },
-            { img: './public/assets/Image/backgrounds/Mask group (1).png', icon: 'fa-solid fa-box-open', title: 'Customize Your Products' },
-            { img: './public/assets/Image/backgrounds/image 106.png', icon: 'fa-solid fa-paper-plane', title: 'Fast, reliable shipping by ocean or air' },
-            { img: './public/assets/Image/backgrounds/image 107.png', icon: 'fa-solid fa-shield-halved', title: 'Product monitoring and inspection' },
+            { img: '/assets/Image/backgrounds/Mask group.png', icon: 'fa-solid fa-magnifying-glass', title: 'Source from Industry Hubs' },
+            { img: '/assets/Image/backgrounds/Mask group (1).png', icon: 'fa-solid fa-box-open', title: 'Customize Your Products' },
+            { img: '/assets/Image/backgrounds/image 106.png', icon: 'fa-solid fa-paper-plane', title: 'Fast, reliable shipping by ocean or air' },
+            { img: '/assets/Image/backgrounds/image 107.png', icon: 'fa-solid fa-shield-halved', title: 'Product monitoring and inspection' },
           ].map((service, idx) => (
             <div className="service-card" key={idx}>
               <div className="service-img" style={{ backgroundImage: `url('${service.img}')` }}>
@@ -394,16 +394,16 @@ export default function Home() {
         <h2>Suppliers by region</h2>
         <div className="regions-grid">
           {[
-            { flag: './public/assets/Layout1/Image/flags/AE@2x.png', name: 'Arabic Emirates', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/icon.png', name: 'Australia', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/US@2x.png', name: 'United States', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/RU@2x.png', name: 'Russia', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/IT@2x.png', name: 'Italy', site: 'shopname.it' },
-            { flag: './public/assets/Layout1/Image/flags/DK@2x.png', name: 'Denmark', site: 'denmark.com.dk' },
-            { flag: './public/assets/Layout1/Image/flags/FR@2x.png', name: 'France', site: 'shopname.com.fr' },
-            { flag: './public/assets/Layout1/Image/flags/AE@2x.png', name: 'Arabic Emirates', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/CN@2x.png', name: 'China', site: 'shopname.ae' },
-            { flag: './public/assets/Layout1/Image/flags/GB@2x.png', name: 'Great Britain', site: 'shopname.co.uk' },
+            { flag: '/assets/Layout1/Image/flags/AE@2x.png', name: 'Arabic Emirates', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/icon.png', name: 'Australia', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/US@2x.png', name: 'United States', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/RU@2x.png', name: 'Russia', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/IT@2x.png', name: 'Italy', site: 'shopname.it' },
+            { flag: '/assets/Layout1/Image/flags/DK@2x.png', name: 'Denmark', site: 'denmark.com.dk' },
+            { flag: '/assets/Layout1/Image/flags/FR@2x.png', name: 'France', site: 'shopname.com.fr' },
+            { flag: '/assets/Layout1/Image/flags/AE@2x.png', name: 'Arabic Emirates', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/CN@2x.png', name: 'China', site: 'shopname.ae' },
+            { flag: '/assets/Layout1/Image/flags/GB@2x.png', name: 'Great Britain', site: 'shopname.co.uk' },
           ].map((region, idx) => (
             <div className="region-item" key={idx}>
               <img src={region.flag} alt="" className="region-flag" />

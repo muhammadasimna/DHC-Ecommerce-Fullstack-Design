@@ -114,7 +114,7 @@ export default function Cart() {
                     style={{ cursor: item.productId ? 'pointer' : 'default' }}
                     onClick={() => item.productId && navigate(`/product?id=${item.productId}`)}
                   >
-                    <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ width: '60px' }} />
+                    <img src={item.product?.image || '/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ width: '60px' }} />
                   </div>
                   <div className="cart-item-info" style={{ position: 'relative' }}>
                     <div className="mobile-cart-menu-wrap mobile-only">
@@ -285,7 +285,7 @@ export default function Cart() {
                   style={{ cursor: item.productId ? 'pointer' : 'default' }}
                   onClick={() => item.productId && navigate(`/product?id=${item.productId}`)}
                   >
-                    <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" />
+                    <img src={item.product?.image || '/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" />
                   </div>
                 <p style={{ fontWeight: 600, marginBottom: '10px' }}>${item.product?.price?.toFixed(2)}</p>
                 <p
@@ -316,7 +316,7 @@ export default function Cart() {
                   style={{ width: '70px', height: '70px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--gray-200)', borderRadius: '6px', background: '#F7F7F7', cursor: item.productId ? 'pointer' : 'default' }}
                   onClick={() => item.productId && navigate(`/product?id=${item.productId}`)}
                 >
-                  <img src={item.product?.image || './public/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ maxWidth: '100%', maxHeight: '100%' }} />
+                  <img src={item.product?.image || '/assets/Layout/alibaba/Image/cloth/Bitmap.png'} alt="" style={{ maxWidth: '100%', maxHeight: '100%' }} />
                 </div>
                 <div className="mobile-saved-info" style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <div>

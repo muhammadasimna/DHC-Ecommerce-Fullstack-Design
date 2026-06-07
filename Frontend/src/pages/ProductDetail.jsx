@@ -18,7 +18,7 @@ export default function ProductDetail() {
 
   const [product, setProduct] = useState({
     id: 1,
-    image: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png',
+    image: '/assets/Layout/alibaba/Image/cloth/Bitmap.png',
     title: 'Mens Long Sleeve T-shirt Cotton Base Layer Slim Muscle',
     price: 98.00,
     oldPrice: 120.00,
@@ -95,7 +95,7 @@ export default function ProductDetail() {
     }
 
     if (images.length === 0) {
-      images.push('./public/assets/Layout/alibaba/Image/cloth/Bitmap.png');
+      images.push('/assets/Layout/alibaba/Image/cloth/Bitmap.png');
     }
 
     return images;
@@ -312,7 +312,7 @@ export default function ProductDetail() {
             </div>
           </div>
           <div className="supplier-details">
-            <div className="supplier-detail-item"><img src="./public/assets/Layout1/Image/flags/DE@2x.png" alt="" style={{ width: '20px' }} /><span>Germany, Berlin</span></div>
+            <div className="supplier-detail-item"><img src="/assets/Layout1/Image/flags/DE@2x.png" alt="" style={{ width: '20px' }} /><span>Germany, Berlin</span></div>
             <div className="supplier-detail-item"><i className="fa-solid fa-shield-halved"></i><span>Verified Seller</span></div>
             <div className="supplier-detail-item"><i className="fa-solid fa-earth-americas"></i><span>Worldwide shipping</span></div>
           </div>

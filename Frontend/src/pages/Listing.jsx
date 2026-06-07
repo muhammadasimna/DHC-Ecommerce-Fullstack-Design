@@ -45,7 +45,7 @@ export default function Listing() {
   const defaultProducts = [
     {
       id: 1,
-      image: './public/assets/Image/tech/image 33.png',
+      image: '/assets/Image/tech/image 33.png',
       title: 'Regular Fit Resort Shirt - Cool Tech Style',
       price: 57.70,
       oldPrice: null,
@@ -56,7 +56,7 @@ export default function Listing() {
     },
     {
       id: 2,
-      image: './public/assets/Image/tech/image 23.png',
+      image: '/assets/Image/tech/image 23.png',
       title: 'Water boiler black for kitchen, 1200 Watt',
       price: 78.99,
       oldPrice: 90.00,
@@ -67,7 +67,7 @@ export default function Listing() {
     },
     {
       id: 3,
-      image: './public/assets/Image/tech/image 32.png',
+      image: '/assets/Image/tech/image 32.png',
       title: 'GoPro HERO6 4K Action Camera - Black',
       price: 99.50,
       oldPrice: 120.00,
@@ -78,7 +78,7 @@ export default function Listing() {
     },
     {
       id: 4,
-      image: './public/assets/Layout/alibaba/Image/cloth/Bitmap.png',
+      image: '/assets/Layout/alibaba/Image/cloth/Bitmap.png',
       title: 'T-shirts with multiple colors, for men',
       price: 10.30,
       oldPrice: 15.00,
@@ -89,7 +89,7 @@ export default function Listing() {
     },
     {
       id: 5,
-      image: './public/assets/Layout/alibaba/Image/cloth/image 26.png',
+      image: '/assets/Layout/alibaba/Image/cloth/image 26.png',
       title: 'Solid Backpack blue jeans large size',
       price: 78.99,
       oldPrice: null,
@@ -100,7 +100,7 @@ export default function Listing() {
     },
     {
       id: 6,
-      image: './public/assets/Image/tech/8.png',
+      image: '/assets/Image/tech/8.png',
       title: 'Smart watches silver color modern',
       price: 19.00,
       oldPrice: 25.00,
